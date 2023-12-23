@@ -1,43 +1,3 @@
-module synchronizer#(parameter N=2)( 
-	input clk, sig,
-	output synsig
-);
-	reg [N-1:0] buffer;
-	assign synsig = buffer[N-1];
-	always @(posedge clk)
-	buffer <= {buffer[N-2:0], sig};
-endmodule
-
-//----------------------------------------------------------
-
-module seg7(input [3:0] n, output [6:0] o);
-  
-  assign o[0] = (n == 4'h1 || n == 4'h4);
-  assign o[1] = (n == 4'h1 || n == 4'h5 || n == 4'h6 
-                  || n == 4'hc || n == 4'he || n == 4'hf);
-  assign o[2] = (n == 4'h1 || n == 4'h2 || n == 4'hc
-                  || n == 4'he || n == 4'hf);
-  assign o[3] = (n == 4'h1 || n == 4'h4 || n == 4'h7
-                  || n == 4'ha || n == 4'hf);
-  assign o[4] = (n == 4'h3 || n == 4'h5 || n == 4'h7
-                  || n == 4'h9 || n == 4'h4);
-  assign o[5] = (n == 4'h2 || n == 4'h3 || n == 4'h7);
-  assign o[6] = (n == 4'h0 || n == 4'h1 || n == 4'h7
-                  || n == 4'hc || n == 4'hd);
-  
-endmodule
-
-//----------------------------------------------------------
-
-module detect(input clk, a, output out);
-	reg q;
-	always @(posedge clk)
-		q <= a;
-	assign out = !q && a;
-endmodule
-
-//----------------------------------------------------------
-
 module Tetris(
 
 	//////////// Audio //////////
@@ -109,6 +69,7 @@ wire [9:0] c; //column
 
 assign VGA_CLK = clk;
 
+//sprawdzić czy 0 czy 1 zadziała jako reset
 color_generator cg(clk, !KEY[3], VGA_BLANK_N, r, c, VGA_R, VGA_G, VGA_B);
 VGA_sync vga(clk, !KEY[3], VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
 
@@ -116,17 +77,47 @@ VGA_sync vga(clk, !KEY[3], VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
 //  Game memory
 //=======================================================
 
-wire [23:0] columns [9:0];
-wire [4:0] row;
+wire [23:0] ram_columns [9:0];
+reg [4:0] ram_row;
 wire [23:0] d [9:0]; //zwykle kolor klocka, ale nie np przy burzeniu linii
-wire we [9:0];
+reg we [9:0]; //!!!
 
 generate
 	genvar i;
 	for (i = 0; i < 10; i = i+1) begin : rams
-		ram_single ram(columns[i], row, d[i], we[i], clk);
+		ram_single ram(ram_columns[i], ram_row, d[i], we[i], clk);
+	end
+
+	for(i = 0; i<10; i = i+1) begin : data
+		assign d[i] = (q == )
 	end
 endgenerate
+
+
+
+//colors
+localparam [23:0]   LIGHT_ROSE = {8'd255, 8'd204, 8'd229}, 
+					PURPLE = {8'd255, 8'd153, 8'd255},
+					LIGHT_GREY = {8'd160, 8'd160, 8'd160},
+					DARK_GREY = {8'd96, 8'd96, 8'd96},
+					MINTY = {8'd153, 8'd255, 8'd204},
+					BLUE = {8'd102, 8'd178, 8'd255},
+					PINK = {8'd255, 8'd51, 8'd153},
+					DARK_PURPLE = {8'd127, 8'd0, 8'd255},
+					YELLOW = {8'd255, 8'd255, 8'd102},
+					GREEN = {8'd102, 8'd255, 8'd102},
+					PLUM = {8'd153, 8'd0, 8'd153};
+
+wire [23:0] i_color, t_color, o_color, l_color, j_color, s_color, z_color;
+assign i_color = MINTY;
+assign t_color = BLUE;
+assign o_color = PINK;
+assign l_color = DARK_PURPLE;
+assign j_color = YELLOW;
+assign s_color = GREEN;
+assign z_color = PLUM;
+
+reg [23:0] block_color;
 
 //=======================================================
 //  Game logic
@@ -139,9 +130,208 @@ localparam [2:0]	START_SCREEN = 3'b000, COUNTING = 3'b001,
 					START_FALLING = 3'b010, STATIC_FALL = 3'b011, 
 					DYNAMIC_FALL = 3'b100, DISTROY_LINE = 3'b101, FAIL = 3'b111;
 
+reg [2:0] q;
+
 reg [9:0] distroyed_lines; //rekord niejasny, koło 400
 reg [10:0] score; //jak liczyć to kiedyś potem, rekord - 1,62 miliona
 reg [5:0] level; //rekord 33
 
+reg [5:0] wait_cnt; //licznik zatrzymania w jednym miejscu (w klatkach)
+reg [5:0] speed; //granica oczekiwania (w klatkach)
+
+reg [8:0] seed; //liczy czas od resetu/przegrania gry do startu i jest ziarnem dla generowania pseudolosowości
+wire [2:0] block;
+reg next_block;
+reg rand_rst;
+pseudo_random_number_generator rand(next_block, rand_rst, seed, block);
+//10 cykli oczekiwania na info czy coś jest z boku nie zakoli jeśli tak długo maluję ekran
+//być może trzeba by było dodać reset
+always @(posedge clk or negedge KEY[3]) begin
+
+	if(!KEY[3]) begin
+
+		seed <= 0;
+		q <= START_SCREEN;
+		speed <= 5'd60;
+		wait_cnt <= 0;
+
+	end
+	else begin
+		seed <= seed + 1;
+		next_block <= 0;
+		rand_rst <= 0;
+		we <= 0;
+		//ram_row <= row;
+
+		case(q)
+
+		START_SCREEN: 	begin
+							speed <= 5'd30;
+							wait_cnt <= 0;
+							row <= 0;
+							ram_row <= 0;
+							if(rotation) begin 
+								q <= START_FALLING; //key[2] (rotation) jako start spadania
+								rand_rst <= 1; //wprowadzam ziarno pseudolosowości
+							end
+						end
+
+		//będę tu modyfikować tylko ram, a całe wyświetlanie wydarzy się gdzieś indziej
+
+		START_FALLING: 	begin
+							//next_block <= 1; to się musi pojawiać przy wchodzeniu do tego stanu
+							//row <= 0; to też
+							
+							wait_cnt <= 0;
+
+							if(q == START_SCREEN) begin
+								case(block)
+
+								I: block_color <= i_color;
+								T: block_color <= t_color;
+								O: block_color <= o_color;
+								L: block_color <= l_color;
+								J: block_color <= j_color;
+								S: block_color <= s_color;
+								Z: block_color <= z_color;
+
+								endcase
+							end
+							else begin
+								case(block)
+								
+								
+								//tło oznaczane jako 0
+								I: 	begin
+										if(!|ram_columns[4]) begin
+											we <= 1;
+											q <= STATIC_FALL;
+										end
+										else q <= FAIL;
+									end
+
+								T:	begin
+										if(!|ram_columns[5]) begin
+											we <= 1;
+											q <= STATIC_FALL;
+										end
+										else q <= FAIL;
+									end
+
+								O:	begin
+										if(!|ram_columns[4] && !|ram_columns[5]) begin
+											we <= 1;
+											q <= STATIC_FALL;
+										end
+										else q <= FAIL;
+									end
+
+								L:	begin
+										if(!|ram_columns[5] && !|ram_columns[6]) begin
+											we <= 1;
+											q <= STATIC_FALL;
+										end
+										else q <= FAIL;
+									end
+
+								J:	begin
+										if(!|ram_columns[5] && !|ram_columns[6]) begin
+											we <= 1;
+											q <= STATIC_FALL;
+										end
+										else q <= FAIL;
+									end
+
+								S:	begin
+										if(!|ram_columns[4] && !|ram_columns[5]) begin
+											we <= 1;
+											q <= STATIC_FALL;
+										end
+										else q <= FAIL;
+									end
+
+								Z:	begin
+										if(!|ram_columns[4] && !|ram_columns[5]) begin
+											we <= 1;
+											q <= STATIC_FALL;
+										end
+										else q <= FAIL;
+									end
+
+								endcase
+							end
+						end
+
+		DYNAMIC_FALL:	begin //row i column zapamiętają koordynaty MIEJSCA W KTÓRE CHCĘ PRZESUNĄĆ najbardziej wysunięty w dół (i w lewo jeśli robi różnicę) element, po rodzaju i rotacji odtworzę resztę klocka
+							case(block)								
+								
+							//tło oznaczane jako 0
+							I: 	begin
+									if(!|ram_columns[column]) begin //jestem w row, tam gdzie chcę
+										we <= 1;
+									end
+									else q <= FAIL;
+								end
+
+							T:	begin
+									if(!|ram_columns[column]) begin
+										we <= 1;
+									end
+									else q <= FAIL;
+								end
+
+							O:	begin
+									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
+										we <= 1;
+									end
+									else q <= FAIL;
+								end
+
+							L:	begin
+									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
+										we <= 1;
+									end
+									else q <= FAIL;
+								end
+
+							J:	begin
+									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
+										we <= 1;
+									end
+									else q <= FAIL;
+								end
+
+							S:	begin
+									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
+										we <= 1;
+									end
+									else q <= FAIL;
+								end
+
+							Z:	begin
+									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
+										we <= 1;
+									end
+									else q <= FAIL;
+								end
+
+							endcase
+						end
+
+		STATIC_FALL:	begin //to jest miejsce w którym mogę przesuwać klocek
+							if(wait_cnt > speed) begin
+								q <= DYNAMIC_FALL;
+								row <= row + 1; //najbardziej wysunięty rząd
+								ram_row <= row + 1;
+							end
+							else begin
+								if(VGA_VS) //to zdubluje wynik, pozbyłabym się tego duble jakimś rejestrem, więc wszystko jedno, mogę trzymać o bit więcej speed'a
+									wait_cnt <= wait_cnt + 1; //!! to nie zadziała
+							end
+						end
+
+		endcase
+	end
+end
 
 endmodule
