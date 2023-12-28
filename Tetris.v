@@ -37,11 +37,20 @@ module Tetris(
 	output		          		VGA_HS,
 	output		     [7:0]		VGA_R, 
 	output		          		VGA_SYNC_N,
-	output		          		VGA_VS //
+	output		          		VGA_VS,
+
+	///// wyjścia podglądowe ////
+	output [2:0] next_block,
+	output gen_next_block,
+	output KEY0 //
 );
 
+assign KEY0 = KEY[0];
+
 wire clk;
-clock_divider pll(clk, CLOCK_50, !KEY[3]);
+assign clk = CLOCK_50;
+//WYRZUCONE DO SYMULACJI, MUSI WRÓCIĆ DO ODPALENIA SPRZĘTOWEGO
+//clock_divider pll(clk, CLOCK_50, 0);
 
 // delayed keys signals
 wire down; 
@@ -51,7 +60,7 @@ wire right;
 //muszę znaleźć inny reset
 wire [3:0] click; // clicking detectors
 
-synchronizer syn_key1(clk, ~KEY[0], right);
+synchronizer syn_key1(clk, ~KEY[0], right); //wymaga zmiany
 synchronizer syn_key2(clk, ~KEY[1], left);
 synchronizer syn_key3(clk, ~KEY[2], rotation);
 synchronizer syn_key4(clk, ~KEY[3], down);
@@ -66,12 +75,13 @@ detect click_det3(clk, down, click[3]);
 
 wire [8:0] r; //row
 wire [9:0] c; //column
+wire board; //am i painting the board or not
 
 assign VGA_CLK = clk;
 
 //sprawdzić czy 0 czy 1 zadziała jako reset
-color_generator cg(clk, !KEY[3], VGA_BLANK_N, r, c, VGA_R, VGA_G, VGA_B);
-VGA_sync vga(clk, !KEY[3], VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
+color_generator cg(clk, 0, VGA_BLANK_N, r, c, next_block, board, VGA_R, VGA_G, VGA_B);
+VGA_sync vga(clk, 0, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
 
 //=======================================================
 //  Game memory
@@ -87,10 +97,10 @@ generate
 	for (i = 0; i < 10; i = i+1) begin : rams
 		ram_single ram(ram_columns[i], ram_row, d[i], we[i], clk);
 	end
-
+/*
 	for(i = 0; i<10; i = i+1) begin : data
 		assign d[i] = (q == )
-	end
+	end*/
 endgenerate
 
 
@@ -140,198 +150,24 @@ reg [5:0] wait_cnt; //licznik zatrzymania w jednym miejscu (w klatkach)
 reg [5:0] speed; //granica oczekiwania (w klatkach)
 
 reg [8:0] seed; //liczy czas od resetu/przegrania gry do startu i jest ziarnem dla generowania pseudolosowości
-wire [2:0] block;
-reg next_block;
+//wire [2:0] next_block;
+//wire gen_next_block; //potem chyba jednak reg
 reg rand_rst;
-pseudo_random_number_generator rand(next_block, rand_rst, seed, block);
-//10 cykli oczekiwania na info czy coś jest z boku nie zakoli jeśli tak długo maluję ekran
-//być może trzeba by było dodać reset
+
+//to jest próbne!
+assign gen_next_block = click[0];
+
+pseudo_random_number_generator ps_rand(gen_next_block, rand_rst, seed, next_block); //to tak nie może zostać
+
 always @(posedge clk or negedge KEY[3]) begin
 
-	if(!KEY[3]) begin
-
-		seed <= 0;
-		q <= START_SCREEN;
-		speed <= 5'd60;
-		wait_cnt <= 0;
-
-	end
+	if(!KEY[3]) begin /*seed <= 0*/; rand_rst <= 1; end
 	else begin
 		seed <= seed + 1;
-		next_block <= 0;
 		rand_rst <= 0;
-		we <= 0;
-		//ram_row <= row;
-
-		case(q)
-
-		START_SCREEN: 	begin
-							speed <= 5'd30;
-							wait_cnt <= 0;
-							row <= 0;
-							ram_row <= 0;
-							if(rotation) begin 
-								q <= START_FALLING; //key[2] (rotation) jako start spadania
-								rand_rst <= 1; //wprowadzam ziarno pseudolosowości
-							end
-						end
-
-		//będę tu modyfikować tylko ram, a całe wyświetlanie wydarzy się gdzieś indziej
-
-		START_FALLING: 	begin
-							//next_block <= 1; to się musi pojawiać przy wchodzeniu do tego stanu
-							//row <= 0; to też
-							
-							wait_cnt <= 0;
-
-							if(q == START_SCREEN) begin
-								case(block)
-
-								I: block_color <= i_color;
-								T: block_color <= t_color;
-								O: block_color <= o_color;
-								L: block_color <= l_color;
-								J: block_color <= j_color;
-								S: block_color <= s_color;
-								Z: block_color <= z_color;
-
-								endcase
-							end
-							else begin
-								case(block)
-								
-								
-								//tło oznaczane jako 0
-								I: 	begin
-										if(!|ram_columns[4]) begin
-											we <= 1;
-											q <= STATIC_FALL;
-										end
-										else q <= FAIL;
-									end
-
-								T:	begin
-										if(!|ram_columns[5]) begin
-											we <= 1;
-											q <= STATIC_FALL;
-										end
-										else q <= FAIL;
-									end
-
-								O:	begin
-										if(!|ram_columns[4] && !|ram_columns[5]) begin
-											we <= 1;
-											q <= STATIC_FALL;
-										end
-										else q <= FAIL;
-									end
-
-								L:	begin
-										if(!|ram_columns[5] && !|ram_columns[6]) begin
-											we <= 1;
-											q <= STATIC_FALL;
-										end
-										else q <= FAIL;
-									end
-
-								J:	begin
-										if(!|ram_columns[5] && !|ram_columns[6]) begin
-											we <= 1;
-											q <= STATIC_FALL;
-										end
-										else q <= FAIL;
-									end
-
-								S:	begin
-										if(!|ram_columns[4] && !|ram_columns[5]) begin
-											we <= 1;
-											q <= STATIC_FALL;
-										end
-										else q <= FAIL;
-									end
-
-								Z:	begin
-										if(!|ram_columns[4] && !|ram_columns[5]) begin
-											we <= 1;
-											q <= STATIC_FALL;
-										end
-										else q <= FAIL;
-									end
-
-								endcase
-							end
-						end
-
-		DYNAMIC_FALL:	begin //row i column zapamiętają koordynaty MIEJSCA W KTÓRE CHCĘ PRZESUNĄĆ najbardziej wysunięty w dół (i w lewo jeśli robi różnicę) element, po rodzaju i rotacji odtworzę resztę klocka
-							case(block)								
-								
-							//tło oznaczane jako 0
-							I: 	begin
-									if(!|ram_columns[column]) begin //jestem w row, tam gdzie chcę
-										we <= 1;
-									end
-									else q <= FAIL;
-								end
-
-							T:	begin
-									if(!|ram_columns[column]) begin
-										we <= 1;
-									end
-									else q <= FAIL;
-								end
-
-							O:	begin
-									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
-										we <= 1;
-									end
-									else q <= FAIL;
-								end
-
-							L:	begin
-									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
-										we <= 1;
-									end
-									else q <= FAIL;
-								end
-
-							J:	begin
-									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
-										we <= 1;
-									end
-									else q <= FAIL;
-								end
-
-							S:	begin
-									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
-										we <= 1;
-									end
-									else q <= FAIL;
-								end
-
-							Z:	begin
-									if(!|ram_columns[column] && !|ram_columns[column + 1]) begin
-										we <= 1;
-									end
-									else q <= FAIL;
-								end
-
-							endcase
-						end
-
-		STATIC_FALL:	begin //to jest miejsce w którym mogę przesuwać klocek
-							if(wait_cnt > speed) begin
-								q <= DYNAMIC_FALL;
-								row <= row + 1; //najbardziej wysunięty rząd
-								ram_row <= row + 1;
-							end
-							else begin
-								if(VGA_VS) //to zdubluje wynik, pozbyłabym się tego duble jakimś rejestrem, więc wszystko jedno, mogę trzymać o bit więcej speed'a
-									wait_cnt <= wait_cnt + 1; //!! to nie zadziała
-							end
-						end
-
-		endcase
+		//if(right)
 	end
+
 end
 
 endmodule

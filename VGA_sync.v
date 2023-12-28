@@ -17,7 +17,7 @@ localparam V_SP = 2;
 localparam V_BP = 15;
 
 reg [9:0] cnt_c;    // counter of columns
-reg [9:0] cnt_r;    // counter of rows
+reg [8:0] cnt_r;    // counter of rows
 
 assign blank_n = cnt_c < WIDTH && cnt_r < HIGHT;
 assign hsync = cnt_c >= WIDTH + H_FP && cnt_c < WIDTH + H_FP + H_SP;

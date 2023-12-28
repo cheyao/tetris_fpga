@@ -1,4 +1,4 @@
-`timescale 1ns/10ps
+//`timescale 1ns/10ps
 module  clock_divider_pll_0(
 
 	// interface 'refclk'
