@@ -133,8 +133,8 @@ reg [23:0] block_color;
 //  Game logic
 //=======================================================
 
-localparam [2:0] 	I = 3'b000, T = 3'b001, O = 3'b010, L = 3'b011, 
-					J = 3'b100, S = 3'b101, Z = 3'b111;
+localparam [2:0] 	I = 3'b111, T = 3'b001, O = 3'b010, L = 3'b011, 
+					J = 3'b100, S = 3'b101, Z = 3'b110;
 
 localparam [2:0]	START_SCREEN = 3'b000, COUNTING = 3'b001, 
 					START_FALLING = 3'b010, STATIC_FALL = 3'b011, 
@@ -157,6 +157,7 @@ reg rand_rst;
 //to jest próbne!
 assign gen_next_block = click[0];
 
+///potrzebuję 3 żeby dostać dokładnie 7
 pseudo_random_number_generator ps_rand(gen_next_block, rand_rst, seed, next_block); //to tak nie może zostać
 
 always @(posedge clk or negedge KEY[3]) begin

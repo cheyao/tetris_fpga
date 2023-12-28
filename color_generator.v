@@ -13,8 +13,8 @@ module color_generator (
     assign blue = blank_n ? rgb [7:0] : 0;
 
     //block types
-    localparam [2:0] 	I = 3'b000, T = 3'b001, O = 3'b010, L = 3'b011, 
-					    J = 3'b100, S = 3'b101, Z = 3'b111;
+    localparam [2:0] 	I = 3'b111, T = 3'b001, O = 3'b010, L = 3'b011, 
+					    J = 3'b100, S = 3'b101, Z = 3'b110;
     //brakuje 6
     //colors
     localparam [23:0]   LIGHT_ROSE = {8'd255, 8'd204, 8'd229}, 
@@ -57,7 +57,7 @@ module color_generator (
     localparam [2:0] BOARD = 3'b100, FRAME = 3'b010, NEXT_FIELD = 3'b001;
 
 
-    always @* begin //trzeba zamienić na case
+    always @* begin
         
         case(pos)
 
