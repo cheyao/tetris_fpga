@@ -2,7 +2,9 @@ module color_generator (
     input clk, rst, blank_n,
     input [8:0] row,
     input [9:0] column,
+    input [2:0] block,
     input [2:0] next_block,
+    input [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0],
     output board,
     output [7:0] red, green, blue
 );
@@ -30,6 +32,7 @@ module color_generator (
                         PLUM = {8'd153, 8'd0, 8'd153};
 
     wire [23:0] i_color, t_color, o_color, l_color, j_color, s_color, z_color;
+    reg [23:0] block_color;
     assign i_color = MINTY;
     assign t_color = BLUE;
     assign o_color = PINK;
@@ -37,6 +40,19 @@ module color_generator (
     assign j_color = YELLOW;
     assign s_color = GREEN;
     assign z_color = PLUM;
+
+    always @* case(block)
+
+        I: block_color = i_color;
+        T: block_color = t_color;
+        O: block_color = o_color;
+        L: block_color = l_color;
+        J: block_color = j_color;
+        S: block_color = s_color;
+        Z: block_color = z_color;
+        default: block_color = LIGHT_ROSE;
+
+    endcase
 
     //screen elements
     wire frames;
@@ -61,7 +77,15 @@ module color_generator (
         
         case(pos)
 
-        BOARD: rgb = LIGHT_ROSE;
+        BOARD:  begin
+                    if(column >= sq1[3] && column < sq1[2] && row >= sq1[1] [8:0] && row < sq1[0] [8:0]
+                    || column >= sq2[3] && column < sq2[2] && row >= sq2[1] [8:0] && row < sq2[0] [8:0]
+                    || column >= sq3[3] && column < sq3[2] && row >= sq3[1] [8:0] && row < sq3[0] [8:0]
+                    || column >= sq4[3] && column < sq4[2] && row >= sq4[1] [8:0] && row < sq4[0] [8:0])
+                        rgb = block_color;
+                    else
+                        rgb = LIGHT_ROSE;
+                end
 
         FRAME: rgb = LIGHT_GREY;
 
@@ -73,8 +97,8 @@ module color_generator (
                     O: rgb = (row >= 9'd60 && row < 9'd100 && column >= 10'd520 && column < 10'd560) ? o_color : PURPLE;
                     L: rgb = (row >= 9'd80 && row < 9'd100 && column >= 10'd510 && column < 10'd570
                                 || row >= 9'd60 && row < 9'd80 && column >= 10'd550 && column < 10'd570) ? l_color : PURPLE;
-                    J: rgb = (row >= 9'd60 && row < 9'd80 && column >= 10'd510 && column < 10'd570
-                                || row >= 9'd80 && row < 9'd100 && column >= 10'd510 && column < 10'd530) ? j_color : PURPLE;
+                    J: rgb = (row >= 9'd80 && row < 9'd100 && column >= 10'd550 && column < 10'd570
+                                || row >= 9'd60 && row < 9'd80 && column >= 10'd510 && column < 10'd570) ? j_color : PURPLE;
                     S: rgb = (row >= 9'd60 && row < 9'd80 && column >= 10'd530 && column < 10'd570
                                 || row >= 9'd80 && row < 9'd100 && column >= 10'd510 && column < 10'd550) ? s_color : PURPLE;
                     Z: rgb = (row >= 9'd60 && row < 9'd80 && column >= 10'd510 && column < 10'd550

@@ -9,7 +9,7 @@ reg [8:0] q;
 wire [8:0] w;
 
 assign w = q >> (8 - W);
-assign o = ~|w[W:0] ? {1'b1, q[7:6]}: w[W:0];
+assign o = ~|w[W:0] ? {1'b1, q[7:8-W]}: w[W:0];
 
 always @(posedge next or posedge rst)
     if (rst) q <= d;

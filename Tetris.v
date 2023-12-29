@@ -41,11 +41,8 @@ module Tetris(
 
 	///// wyjścia podglądowe ////
 	output [2:0] next_block,
-	output gen_next_block,
-	output KEY0 //
+	output reg gen_next_block //
 );
-
-assign KEY0 = KEY[0];
 
 wire clk;
 assign clk = CLOCK_50;
@@ -80,7 +77,7 @@ wire board; //am i painting the board or not
 assign VGA_CLK = clk;
 
 //sprawdzić czy 0 czy 1 zadziała jako reset
-color_generator cg(clk, 0, VGA_BLANK_N, r, c, next_block, board, VGA_R, VGA_G, VGA_B);
+color_generator cg(clk, 0, VGA_BLANK_N, r, c, block, next_block, sq1, sq2, sq3, sq4, board, VGA_R, VGA_G, VGA_B);
 VGA_sync vga(clk, 0, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
 
 //=======================================================
@@ -152,21 +149,131 @@ reg [5:0] speed; //granica oczekiwania (w klatkach)
 reg [8:0] seed; //liczy czas od resetu/przegrania gry do startu i jest ziarnem dla generowania pseudolosowości
 //wire [2:0] next_block;
 //wire gen_next_block; //potem chyba jednak reg
+reg [2:0] block;
 reg rand_rst;
 
-//to jest próbne!
-assign gen_next_block = click[0];
+pseudo_random_number_generator ps_rand(gen_next_block, rand_rst, seed, next_block);
 
-///potrzebuję 3 żeby dostać dokładnie 7
-pseudo_random_number_generator ps_rand(gen_next_block, rand_rst, seed, next_block); //to tak nie może zostać
+wire frame_passed;
+
+detect frame_det(clk, VGA_VS, frame_passed);
+
+//localization points
+//borders: left, right up, down
+reg [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0];
 
 always @(posedge clk or negedge KEY[3]) begin
 
-	if(!KEY[3]) begin /*seed <= 0*/; rand_rst <= 1; end
+	if(!KEY[3]) begin 
+		rand_rst <= 1; 
+		speed <= 6'd1; //żałosne tak naprawdę, ale żeby się nie zesrała ta symulacja
+	end
 	else begin
 		seed <= seed + 1;
 		rand_rst <= 0;
-		//if(right)
+		gen_next_block <= 0;
+		
+		if(click[0]) begin
+			block <= next_block;
+			gen_next_block <= 1;
+			wait_cnt <= 0;
+
+			case(next_block)
+
+			I: 	begin
+
+				sq1 <= {10'd280, 10'd300, 10'd20, 10'd40};
+				sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
+				sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
+				sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+				
+				end
+
+			T:	begin
+
+				sq1 <= {10'd320, 10'd340, 10'd0, 10'd20};
+				sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
+				sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
+				sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+				
+				end
+
+			O:	begin
+
+				sq1 <= {10'd300, 10'd320, 10'd0, 10'd20};
+				sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
+				sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
+				sq4 <= {10'd320, 10'd340, 10'd0, 10'd20};
+				
+				end
+
+			L:	begin
+
+				sq1 <= {10'd340, 10'd360, 10'd0, 10'd20};
+				sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
+				sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
+				sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+				
+				end
+
+			J:	begin
+
+				sq1 <= {10'd300, 10'd320, 10'd0, 10'd20};
+				sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
+				sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
+				sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+				
+				end
+
+			S:	begin
+
+				sq1 <= {10'd320, 10'd340, 10'd0, 10'd20};
+				sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
+				sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
+				sq4 <= {10'd340, 10'd360, 10'd0, 10'd20};
+				
+				end
+
+			Z:	begin
+
+				sq1 <= {10'd320, 10'd340, 10'd20, 10'd40};
+				sq2 <= {10'd300, 10'd320, 10'd0, 10'd20};
+				sq3 <= {10'd320, 10'd340, 10'd0, 10'd20};
+				sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+				
+				end
+
+			default: begin
+				sq1 <= {10'd0, 10'd0, 10'd0, 10'd0};
+				sq2 <= {10'd0, 10'd0, 10'd0, 10'd0};
+				sq3 <= {10'd0, 10'd0, 10'd0, 10'd0};
+				sq4 <= {10'd0, 10'd0, 10'd0, 10'd0};
+				
+				end
+
+			endcase
+		end
+
+		//fall
+		if(sq1[0] < 10'd439 && sq2[0] < 10'd439 && sq3[0] < 10'd439 && sq4[0] < 10'd439) begin
+			if(wait_cnt < speed)
+				begin
+					if(frame_passed)
+						wait_cnt <= wait_cnt + 1;
+				end
+			else begin
+				sq1[0] <= sq1[0] + 1;
+				sq1[1] <= sq1[1] + 1;
+				sq2[0] <= sq2[0] + 1;
+				sq2[1] <= sq2[1] + 1;
+				sq3[0] <= sq3[0] + 1;
+				sq3[1] <= sq3[1] + 1;
+				sq4[0] <= sq4[0] + 1;
+				sq4[1] <= sq4[1] + 1;
+				wait_cnt <= 0;
+			end
+		end
+
 	end
 
 end

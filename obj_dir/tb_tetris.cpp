@@ -40,6 +40,7 @@ int main(){
 
     const unsigned char blue[] = {0, 130, 255};
     const unsigned char orange[] = {255, 100, 50};
+    bool durna_zmienna;
 
     while(!dsp.is_closed() && !dsp.is_keyESC()){
 
@@ -63,6 +64,8 @@ int main(){
             }
         }
         
+        if(dsp.is_keyA()) durna_zmienna = 1;
+
         dsp.display(screen);
         dsp.wait();
     }
