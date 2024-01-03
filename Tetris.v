@@ -41,9 +41,9 @@ module Tetris(
 );
 
 wire clk;
-assign clk = CLOCK_50;
+//assign clk = CLOCK_50;
 //WYRZUCONE DO SYMULACJI, MUSI WRÓCIĆ DO ODPALENIA SPRZĘTOWEGO
-//clock_divider pll(clk, CLOCK_50, 0);
+clock_divider pll(clk, CLOCK_50, 0);
 
 // delayed keys signals
 wire down; 
@@ -75,7 +75,9 @@ assign VGA_CLK = clk;
 //sprawdzić czy 0 czy 1 zadziała jako reset
 color_generator cg	(clk, 0, VGA_BLANK_N, r, c, block, next_block, 
 					q, q_counting, ram_columns[board_column],
-					sq1, sq2, sq3, sq4, board, block_color, VGA_R, VGA_G, VGA_B);
+					sq1[3], sq1[2], sq1[1], sq1[0], sq2[3], sq2[2], sq2[1], sq2[0], 
+					sq3[3], sq3[2], sq3[1], sq3[0], sq4[3], sq4[2], sq4[1], sq4[0],
+					board, block_color, VGA_R, VGA_G, VGA_B);
 VGA_sync vga(clk, 0, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
 
 //=======================================================
@@ -175,10 +177,10 @@ generate
 	end
 endgenerate
 
-position_counter ps_c1(sq1, pos1);
-position_counter ps_c2(sq2, pos2);
-position_counter ps_c3(sq3, pos3);
-position_counter ps_c4(sq4, pos4);
+position_counter ps_c1(sq1[2], sq1[0], pos1[1], pos1[0]);
+position_counter ps_c2(sq2[2], sq2[0], pos2[1], pos2[0]);
+position_counter ps_c3(sq3[2], sq3[0], pos3[1], pos3[0]);
+position_counter ps_c4(sq4[2], sq4[0], pos4[1], pos4[0]);
 
 always @* 	casez(b_col)
 			
@@ -206,7 +208,7 @@ always @(posedge clk) begin
 	save <= 4'b0;
 
 	
-	for(j = 0; j<10; j++) begin
+	for(j = 0; j<10; j= j+1) begin
 		we[j] <= 0;
 	end
 
@@ -221,7 +223,7 @@ always @(posedge clk) begin
 	case(q)
 
 	START_SCREEN: begin		
-		speed <= 6'd1; //żałosne tak naprawdę, ale żeby się nie zesrała ta symulacja
+		speed <= 6'd5; //żałosne tak naprawdę, ale żeby się nie zesrała ta symulacja
 		if(|click) begin
 			q <= COUNTING;
 			rand_rst <= 1; 
@@ -232,7 +234,7 @@ always @(posedge clk) begin
 
 	COUNTING: begin
 		if(frame_passed) begin 
-			if(wait_cnt < 6'd10) //stałe do zmiany oczywiście
+			if(wait_cnt < 6'd30) //stałe do zmiany oczywiście
 				wait_cnt <= wait_cnt + 1;
 			else begin
 				if(q_counting > 0) begin
@@ -259,73 +261,74 @@ always @(posedge clk) begin
 
 		I: 	begin
 
-			sq1 <= {10'd280, 10'd300, 10'd20, 10'd40};
-			sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
-			sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
-			sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+			sq1[3] <= 10'd280; sq1[2] <= 10'd300; sq1[1] <= 10'd20; sq1[0] <= 10'd40;
+			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
 			
 			end
 
 		T:	begin
 
-			sq1 <= {10'd320, 10'd340, 10'd0, 10'd20};
-			sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
-			sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
-			sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+			sq1[3] <= 10'd320; sq1[2] <= 10'd340; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
 
 			end
 
 		O:	begin
 
-			sq1 <= {10'd300, 10'd320, 10'd0, 10'd20};
-			sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
-			sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
-			sq4 <= {10'd320, 10'd340, 10'd0, 10'd20};
+			sq1[3] <= 10'd300; sq1[2] <= 10'd320; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+			sq4[3] <= 10'd320; sq4[2] <= 10'd340; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
 			
 			end
 
 		L:	begin
 
-			sq1 <= {10'd340, 10'd360, 10'd0, 10'd20};
-			sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
-			sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
-			sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+			sq1[3] <= 10'd340; sq1[2] <= 10'd360; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
 			
 			end
 
 		J:	begin
 
-			sq1 <= {10'd300, 10'd320, 10'd0, 10'd20};
-			sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
-			sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
-			sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+			sq1[3] <= 10'd300; sq1[2] <= 10'd320; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
 			
 			end
 
 		S:	begin
 
-			sq1 <= {10'd320, 10'd340, 10'd0, 10'd20};
-			sq2 <= {10'd300, 10'd320, 10'd20, 10'd40};
-			sq3 <= {10'd320, 10'd340, 10'd20, 10'd40};
-			sq4 <= {10'd340, 10'd360, 10'd0, 10'd20};
+			sq1[3] <= 10'd320; sq1[2] <= 10'd340; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
 			
 			end
 
 		Z:	begin
 
-			sq1 <= {10'd320, 10'd340, 10'd20, 10'd40};
-			sq2 <= {10'd300, 10'd320, 10'd0, 10'd20};
-			sq3 <= {10'd320, 10'd340, 10'd0, 10'd20};
-			sq4 <= {10'd340, 10'd360, 10'd20, 10'd40};
+			sq1[3] <= 10'd320; sq1[2] <= 10'd340; sq1[1] <= 10'd20; sq1[0] <= 10'd40;
+			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd0; sq2[0] <= 10'd20;
+			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd0; sq3[0] <= 10'd20;
+			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
 			
 			end
 
 		default: begin
-			sq1 <= {10'd0, 10'd0, 10'd0, 10'd0};
-			sq2 <= {10'd0, 10'd0, 10'd0, 10'd0};
-			sq3 <= {10'd0, 10'd0, 10'd0, 10'd0};
-			sq4 <= {10'd0, 10'd0, 10'd0, 10'd0};
-			
+
+			sq1[3] <= 10'd0; sq1[2] <= 10'd0; sq1[1] <= 10'd0; sq1[0] <= 10'd0;
+			sq2[3] <= 10'd0; sq2[2] <= 10'd0; sq2[1] <= 10'd0; sq2[0] <= 10'd0;
+			sq3[3] <= 10'd0; sq3[2] <= 10'd0; sq3[1] <= 10'd0; sq3[0] <= 10'd0;
+			sq4[3] <= 10'd0; sq4[2] <= 10'd0; sq4[1] <= 10'd0; sq4[0] <= 10'd0;
+
 			end
 		endcase
 
@@ -405,8 +408,8 @@ always @(posedge clk) begin
 
 		if(frame_passed) begin 
 
-			//if(sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
-			if(sq1[0] < 10'd140 && sq2[0] < 10'd140 && sq3[0] < 10'd140 && sq4[0] < 10'd140) begin
+			if(sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
+			//if(sq1[0] < 10'd140 && sq2[0] < 10'd140 && sq3[0] < 10'd140 && sq4[0] < 10'd140) begin
 				if(wait_cnt < speed)
 					begin
 						wait_cnt <= wait_cnt + 1;

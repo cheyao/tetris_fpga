@@ -7,7 +7,8 @@ module color_generator (
     input [2:0] q,
     input [1:0] q_counting,
     input [23:0] ram_color,
-    input [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0],
+    input [9:0] sq1_3, sq1_2, sq1_1, sq1_0, sq2_3, sq2_2, sq2_1, sq2_0, 
+                sq3_3, sq3_2, sq3_1, sq3_0, sq4_3, sq4_2, sq4_1, sq4_0,
     output board,
     output reg [23:0] block_color,
     output [7:0] red, green, blue
@@ -113,10 +114,10 @@ module color_generator (
                                 endcase
 
                     FALLING :
-                        if(column >= sq1[3] && column < sq1[2] && row >= sq1[1] [8:0] && row < sq1[0] [8:0]
-                        || column >= sq2[3] && column < sq2[2] && row >= sq2[1] [8:0] && row < sq2[0] [8:0]
-                        || column >= sq3[3] && column < sq3[2] && row >= sq3[1] [8:0] && row < sq3[0] [8:0]
-                        || column >= sq4[3] && column < sq4[2] && row >= sq4[1] [8:0] && row < sq4[0] [8:0])
+                        if(column >= sq1_3 && column < sq1_2 && row >= sq1_1 [8:0] && row < sq1_0 [8:0]
+                        || column >= sq2_3 && column < sq2_2 && row >= sq2_1 [8:0] && row < sq2_0 [8:0]
+                        || column >= sq3_3 && column < sq3_2 && row >= sq3_1 [8:0] && row < sq3_0 [8:0]
+                        || column >= sq4_3 && column < sq4_2 && row >= sq4_1 [8:0] && row < sq4_0 [8:0])
                             rgb = block_color;
                         else if(|ram_color)
                             rgb = ram_color;
