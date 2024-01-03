@@ -124,7 +124,7 @@ module color_generator (
                             rgb = LIGHT_ROSE;
 
                     FAIL:
-                        if(row >= 9'd190 && row < 9'd290 && !(column >= 10'd260 && column < 10'd280)
+                        if(row >= 9'd190 && row < 9'd290 && column >= 10'd223 && column < 10'd417 && !(column >= 10'd260 && column < 10'd280)
                         && !(row >= 9'd250 && column >= 10'd240 && column < 10'd280)
                         && !(column >= 10'd320 && column < 10'd340)
                         && !(column >= 10'd360 && column < 10'd380)

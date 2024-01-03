@@ -241,6 +241,7 @@ always @(posedge clk) begin
 				end
 				else begin
 					q <= START_FALLING;
+					ram_row <= 5'd0;
 					block <= next_block;
 					gen_next_block <= 1; 
 					wait_cnt <= 0;
@@ -327,6 +328,9 @@ always @(posedge clk) begin
 			
 			end
 		endcase
+
+		if(|ram_columns[pos1[0][3:0]] || |ram_columns[pos2[0][3:0]]
+			|| |ram_columns[pos3[0][3:0]] || |ram_columns[pos4[0][3:0]]) q <= FAIL;
 	end
 
 	FALLING: begin //wszystie operacje na ramie wydarzają się po VS czyli na blank czasie
@@ -358,10 +362,13 @@ always @(posedge clk) begin
 			end
 			4'd7: begin
 				we[pos4[0][3:0]] <= 1;
-				save <= 4'd0;
+				save <= 4'd8;
+			end
+			4'd8: begin
 				q <= START_FALLING; // tu potencjalnie przechodzimy do innego stanu, wtedy być może nie warto nawet czasami wchodzić do save
+				ram_row <= 5'd0;
 				block <= next_block;
-				gen_next_block <= 1; 
+				gen_next_block <= 1; //ZA SZYBKO BO SIĘ ZIUMZIUMUJE
 				wait_cnt <= 0;
 			end
 			default: save <= 4'd0;			
@@ -372,10 +379,10 @@ always @(posedge clk) begin
 						|| pos3[1] == nearest_board_row - 1 && |ram_columns[pos3[0][3:0]]
 						|| pos4[1] == nearest_board_row - 1 && |ram_columns[pos4[0][3:0]])) 
 			begin
-				if(nearest_board_row > 0) begin
+				//if(nearest_board_row > 0) begin
 					ram_row <= pos1[1];
 					save <= 4'd1;
-				end else q <= FAIL;
+				//end else q <= FAIL;
 			end
 		else if(check_down && sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
 				if(wait_cnt < speed)
@@ -392,6 +399,7 @@ always @(posedge clk) begin
 					sq4[0] <= sq4[0] + 1;
 					sq4[1] <= sq4[1] + 1;
 					wait_cnt <= 0;
+					nearest_board_row <= nearest_board_row + 1;
 				end
 			end
 
@@ -426,7 +434,6 @@ always @(posedge clk) begin
 				begin //ten if jest w złym miejscu w sensie odliczania klatek 
 					ram_row <= nearest_board_row;
 					check_down <= 1;
-					nearest_board_row <= nearest_board_row + 1;
 				end 
 				else begin
 
