@@ -166,7 +166,7 @@ reg [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0];
 //row, column
 wire [4:0] pos1 [1:0], pos2 [1:0], pos3 [1:0], pos4[1:0];
 
-wire b_col [9:0];
+wire [9:0] b_col;
 reg [3:0] board_column;
 
 generate
@@ -180,18 +180,18 @@ position_counter ps_c2(sq2, pos2);
 position_counter ps_c3(sq3, pos3);
 position_counter ps_c4(sq4, pos4);
 
-always @* 	casez({b_col[0], b_col[1], b_col[2], b_col[3], b_col[4], 
-				b_col[5], b_col[6], b_col[7], b_col[8], b_col[9]})
+always @* 	casez(b_col)
 			
-			10'b1000000000: board_column = 4'd0;
-			10'b?100000000: board_column = 4'd1;
-			10'b??10000000: board_column = 4'd2;
-			10'b???1000000: board_column = 4'd3;
-			10'b????100000: board_column = 4'd4;
-			10'b?????10000: board_column = 4'd5;
-			10'b??????1000: board_column = 4'd6;
-			10'b???????100: board_column = 4'd7;
-			10'b????????10: board_column = 4'd8;
+			10'b?????????1: board_column = 4'd0;
+			10'b????????10: board_column = 4'd1;
+			10'b???????100: board_column = 4'd2;
+			10'b??????1000: board_column = 4'd3;
+			10'b?????10000: board_column = 4'd4;
+			10'b????100000: board_column = 4'd5;
+			10'b???1000000: board_column = 4'd6;
+			10'b??10000000: board_column = 4'd7;
+			10'b?100000000: board_column = 4'd8;
+			10'b1000000000: board_column = 4'd9;
 			default: board_column = 4'd9;
 
 			endcase
@@ -360,6 +360,9 @@ always @(posedge clk) begin
 				we[pos4[0][3:0]] <= 1;
 				save <= 4'd0;
 				q <= START_FALLING; // tu potencjalnie przechodzimy do innego stanu, wtedy być może nie warto nawet czasami wchodzić do save
+				block <= next_block;
+				gen_next_block <= 1; 
+				wait_cnt <= 0;
 			end
 			default: save <= 4'd0;			
 		endcase
@@ -394,7 +397,8 @@ always @(posedge clk) begin
 
 		if(frame_passed) begin 
 
-			if(sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
+			//if(sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
+			if(sq1[0] < 10'd140 && sq2[0] < 10'd140 && sq3[0] < 10'd140 && sq4[0] < 10'd140) begin
 				if(wait_cnt < speed)
 					begin
 						wait_cnt <= wait_cnt + 1;
@@ -439,7 +443,7 @@ always @(posedge clk) begin
 			end
 			else begin 
 				save <= 4'd1;
-				ram_row <= nearest_board_row - 1;
+				ram_row <= pos1[1];
 			end
 		end
 	end
