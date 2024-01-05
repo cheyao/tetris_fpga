@@ -41,9 +41,9 @@ module Tetris(
 );
 
 wire clk;
-//assign clk = CLOCK_50;
+assign clk = CLOCK_50;
 //WYRZUCONE DO SYMULACJI, MUSI WRÓCIĆ DO ODPALENIA SPRZĘTOWEGO
-clock_divider pll(clk, CLOCK_50, 0);
+//clock_divider pll(clk, CLOCK_50, 0);
 
 // delayed keys signals
 wire down; 
@@ -53,7 +53,7 @@ wire right;
 //muszę znaleźć inny reset
 wire [3:0] click; // clicking detectors
 
-synchronizer syn_key1(clk, ~KEY[0], right); //wymaga zmiany
+synchronizer syn_key1(clk, ~KEY[0], right);
 synchronizer syn_key2(clk, ~KEY[1], left);
 synchronizer syn_key3(clk, ~KEY[2], rotation);
 synchronizer syn_key4(clk, ~KEY[3], down);
@@ -151,14 +151,15 @@ reg [2:0] block;
 reg rand_rst;
 
 reg [1:0] q_counting;
-reg check_down;
+reg check_down, move_left, move_right;
+reg [3:0] check_left, check_right;
 reg [3:0] save;
 //reg [2:0] down_sqares_nb; // 00 - 1, 01 - 2, 10 - 3, 11 - 4
 
 pseudo_random_number_generator ps_rand(gen_next_block, rand_rst, seed, next_block);
 
 wire frame_passed;
-reg [4:0] nearest_board_row, nearest_down_left_column, nearest_down_right_column;
+reg [4:0] nearest_board_row, far_left_column, far_right_column;
 
 detect frame_det(clk, VGA_VS, frame_passed);
 
@@ -205,8 +206,11 @@ always @(posedge clk) begin
 	rand_rst <= 0;
 	gen_next_block <= 0;
 	check_down <= 0;
+	check_left <= 4'd0;
+	check_right <= 4'd0;
 	save <= 4'b0;
-
+	move_left <= 0;
+	move_right <= 0;
 	
 	for(j = 0; j<10; j= j+1) begin
 		we[j] <= 0;
@@ -223,7 +227,7 @@ always @(posedge clk) begin
 	case(q)
 
 	START_SCREEN: begin		
-		speed <= 6'd5; //żałosne tak naprawdę, ale żeby się nie zesrała ta symulacja
+		speed <= 6'd1; //zmiana przy symulacji 1/6
 		if(|click) begin
 			q <= COUNTING;
 			rand_rst <= 1; 
@@ -234,7 +238,7 @@ always @(posedge clk) begin
 
 	COUNTING: begin
 		if(frame_passed) begin 
-			if(wait_cnt < 6'd30) //stałe do zmiany oczywiście
+			if(wait_cnt < 6'd5) //zmiana przy symulacji 5/30
 				wait_cnt <= wait_cnt + 1;
 			else begin
 				if(q_counting > 0) begin
@@ -265,6 +269,8 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+			far_left_column <= 5'd3;
+			far_right_column <= 5'd6;
 			
 			end
 
@@ -274,6 +280,8 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+			far_left_column <= 5'd4;
+			far_right_column <= 5'd6;
 
 			end
 
@@ -283,7 +291,9 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd320; sq4[2] <= 10'd340; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
-			
+			far_left_column <= 5'd4;
+			far_right_column <= 5'd5;
+
 			end
 
 		L:	begin
@@ -292,7 +302,9 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
-			
+			far_left_column <= 5'd4;
+			far_right_column <= 5'd6;
+
 			end
 
 		J:	begin
@@ -301,7 +313,9 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
-			
+			far_left_column <= 5'd4;
+			far_right_column <= 5'd6;
+
 			end
 
 		S:	begin
@@ -310,7 +324,9 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
-			
+			far_left_column <= 5'd4;
+			far_right_column <= 5'd6;
+
 			end
 
 		Z:	begin
@@ -319,7 +335,9 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd0; sq2[0] <= 10'd20;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd0; sq3[0] <= 10'd20;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
-			
+			far_left_column <= 5'd4;
+			far_right_column <= 5'd6;
+
 			end
 
 		default: begin
@@ -371,46 +389,130 @@ always @(posedge clk) begin
 				q <= START_FALLING; // tu potencjalnie przechodzimy do innego stanu, wtedy być może nie warto nawet czasami wchodzić do save
 				ram_row <= 5'd0;
 				block <= next_block;
-				gen_next_block <= 1; //ZA SZYBKO BO SIĘ ZIUMZIUMUJE
+				gen_next_block <= 1;
 				wait_cnt <= 0;
 			end
 			default: save <= 4'd0;			
 		endcase
 
-		if(check_down && (pos1[1] == nearest_board_row - 1 && |ram_columns[pos1[0][3:0]]
-						|| pos2[1] == nearest_board_row - 1 && |ram_columns[pos2[0][3:0]]
-						|| pos3[1] == nearest_board_row - 1 && |ram_columns[pos3[0][3:0]]
-						|| pos4[1] == nearest_board_row - 1 && |ram_columns[pos4[0][3:0]])) 
-			begin
-				//if(nearest_board_row > 0) begin
+		if(check_down) begin
+
+			if	(pos1[1] == nearest_board_row - 1 && |ram_columns[pos1[0][3:0]]
+				|| pos2[1] == nearest_board_row - 1 && |ram_columns[pos2[0][3:0]]
+				|| pos3[1] == nearest_board_row - 1 && |ram_columns[pos3[0][3:0]]
+				|| pos4[1] == nearest_board_row - 1 && |ram_columns[pos4[0][3:0]]) 
+				begin
 					ram_row <= pos1[1];
 					save <= 4'd1;
-				//end else q <= FAIL;
-			end
-		else if(check_down && sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
-				if(wait_cnt < speed)
-					begin
-						wait_cnt <= wait_cnt + 1;
-					end
-				else begin
-					sq1[0] <= sq1[0] + 1;
-					sq1[1] <= sq1[1] + 1;
-					sq2[0] <= sq2[0] + 1;
-					sq2[1] <= sq2[1] + 1;
-					sq3[0] <= sq3[0] + 1;
-					sq3[1] <= sq3[1] + 1;
-					sq4[0] <= sq4[0] + 1;
-					sq4[1] <= sq4[1] + 1;
-					wait_cnt <= 0;
-					nearest_board_row <= nearest_board_row + 1;
+				end
+			else begin
+				sq1[0] <= sq1[0] + 1;
+				sq1[1] <= sq1[1] + 1;
+				sq2[0] <= sq2[0] + 1;
+				sq2[1] <= sq2[1] + 1;
+				sq3[0] <= sq3[0] + 1;
+				sq3[1] <= sq3[1] + 1;
+				sq4[0] <= sq4[0] + 1;
+				sq4[1] <= sq4[1] + 1;
+				wait_cnt <= 0;
+				nearest_board_row <= nearest_board_row + 1;
+				if(|check_left) begin 
+					check_left <= 4'd1;
+					ram_row <= pos1[1];
+				end
+				if(|check_right) begin
+					check_right <= 4'd1;
+					ram_row <= pos1[1];
 				end
 			end
+		end
+		else begin
+			case(check_left)
+
+			4'd1: 	if(!|ram_columns[far_left_column - 1]) begin
+						ram_row <= pos2[1];
+						check_left <= 4'd2;
+					end
+			4'd2: 	if(!|ram_columns[far_left_column - 1]) begin
+						ram_row <= pos3[1];
+						check_left <= 4'd3;
+					end
+			4'd3: 	if(!|ram_columns[far_left_column - 1]) begin
+						ram_row <= pos4[1]; 
+						check_left <= 4'd4; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
+					end
+			4'd4: 	if(!|ram_columns[far_left_column - 1]) begin
+						move_left <= 1;
+					end
+			default: check_left <= 4'd0;
+
+			endcase
+
+			case(check_right)
+
+			4'd1: 	if(!|ram_columns[far_right_column + 1]) begin
+						ram_row <= pos2[1];
+						check_right <= 4'd2;
+					end
+			4'd2: 	if(!|ram_columns[far_right_column + 1]) begin
+						ram_row <= pos3[1];
+						check_right <= 4'd3;
+					end
+			4'd3: 	if(!|ram_columns[far_right_column + 1]) begin
+						ram_row <= pos4[1]; 
+						check_right <= 4'd4; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
+					end
+			4'd4: 	if(!|ram_columns[far_right_column + 1]) begin
+						move_right <= 1;
+					end
+			default: check_right <= 4'd0;
+
+			endcase
+		end
+
+		if(move_left) begin
+			sq1[2] <= sq1[2] - 20;
+			sq1[3] <= sq1[3] - 20;
+			sq2[2] <= sq2[2] - 20;
+			sq2[3] <= sq2[3] - 20;
+			sq3[2] <= sq3[2] - 20;
+			sq3[3] <= sq3[3] - 20;
+			sq4[2] <= sq4[2] - 20;
+			sq4[3] <= sq4[3] - 20;
+			move_left <= 0;
+			far_left_column <= far_left_column - 1;
+			far_right_column <= far_right_column - 1;
+		end
+
+		if(move_right) begin
+			sq1[2] <= sq1[2] + 20;
+			sq1[3] <= sq1[3] + 20;
+			sq2[2] <= sq2[2] + 20;
+			sq2[3] <= sq2[3] + 20;
+			sq3[2] <= sq3[2] + 20;
+			sq3[3] <= sq3[3] + 20;
+			sq4[2] <= sq4[2] + 20;
+			sq4[3] <= sq4[3] + 20;
+			move_left <= 0;
+			far_right_column <= far_right_column + 1;
+			far_left_column <= far_left_column + 1;
+		end
 
 		if(frame_passed) begin 
 
-			if(sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
-			//if(sq1[0] < 10'd140 && sq2[0] < 10'd140 && sq3[0] < 10'd140 && sq4[0] < 10'd140) begin
-				if(wait_cnt < speed)
+			if(left && !right && far_left_column > 5'd0) begin
+				check_left <= 4'd1;
+				ram_row <= pos1[1];
+			end
+
+			if(right && !left && far_right_column < 5'd9) begin
+				check_right <= 4'd1;
+				ram_row <= pos1[1];
+			end
+
+			//if(sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
+			if(sq1[0] < 10'd140 && sq2[0] < 10'd140 && sq3[0] < 10'd140 && sq4[0] < 10'd140) begin
+				if(!down && wait_cnt < speed)
 					begin
 						wait_cnt <= wait_cnt + 1;
 					end
@@ -434,7 +536,7 @@ always @(posedge clk) begin
 				|| sq1[0] == 10'd380 || sq2[0] == 10'd380 || sq3[0] == 10'd380 || sq3[0] == 10'd380
 				|| sq1[0] == 10'd400 || sq2[0] == 10'd400 || sq3[0] == 10'd400 || sq3[0] == 10'd400
 				|| sq1[0] == 10'd420 || sq2[0] == 10'd420 || sq3[0] == 10'd420 || sq3[0] == 10'd420)
-				begin //ten if jest w złym miejscu w sensie odliczania klatek 
+				begin 
 					ram_row <= nearest_board_row;
 					check_down <= 1;
 				end 
@@ -463,7 +565,9 @@ always @(posedge clk) begin
 	//DISTROY_LINE: 
 
 	//w FAIL trzeba wyczyścić pamięć przed powrotem do startu
-	FAIL: if(|click) q <= START_SCREEN;
+	FAIL: begin
+		if(|click) q <= START_SCREEN;
+	end
 
 	default: q <= START_SCREEN;
 
