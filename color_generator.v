@@ -25,6 +25,7 @@ module color_generator (
     //brakuje 6
     //colors
     localparam [23:0]   LIGHT_ROSE = {8'd255, 8'd204, 8'd229}, 
+                        LIGHT_ROSE2 = {8'd255, 8'd190, 8'd240}, 
                         PURPLE = {8'd255, 8'd153, 8'd255},
                         LIGHT_GREY = {8'd160, 8'd160, 8'd160},
                         DARK_GREY = {8'd96, 8'd96, 8'd96},
@@ -121,8 +122,11 @@ module color_generator (
                             rgb = block_color;
                         else if(|ram_color)
                             rgb = ram_color;
-                        else
-                            rgb = LIGHT_ROSE;
+                        else if (column == 10'd240 || column == 10'd260 || column == 10'd280
+                                || column == 10'd300 || column == 10'd320 || column == 10'd340
+                                || column == 10'd360 || column == 10'd380 || column == 10'd400)
+                                rgb = LIGHT_ROSE2;
+                        else rgb = LIGHT_ROSE;
 
                     FAIL:
                         if(row >= 9'd190 && row < 9'd290 && column >= 10'd223 && column < 10'd417 && !(column >= 10'd260 && column < 10'd280)
@@ -133,8 +137,7 @@ module color_generator (
                         && !(column >= 10'd297 && column < 10'd303 && (row >= 9'd250 || row >= 9'd210 && row < 9'd230))
                         && !(column >= 10'd240 && column < 10'd280 && row >= 9'd210 && row < 9'd230))
                             rgb = WHITE;
-                        else 
-                            rgb = LIGHT_ROSE;
+                        else rgb = LIGHT_ROSE;
 
                     default: rgb = LIGHT_ROSE;
                     

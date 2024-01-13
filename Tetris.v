@@ -96,7 +96,7 @@ generate
 	end
 
 	for(i = 0; i<10; i = i+1) begin : data
-		assign d[i] = block_color;
+		assign d[i] = q == CLEAN || q == DISTROY_LINE? 0 : block_color;
 	end
 endgenerate
 
@@ -133,7 +133,7 @@ localparam [2:0] 	I = 3'b111, T = 3'b001, O = 3'b010, L = 3'b011,
 
 localparam [2:0]	START_SCREEN = 3'b000, COUNTING = 3'b001, 
 					START_FALLING = 3'b010, FALLING = 3'b011, 
-					DISTROY_LINE = 3'b101, FAIL = 3'b111;
+					DISTROY_LINE = 3'b100, CLEAN = 3'b101, FAIL = 3'b111;
 
 reg [2:0] q;
 
@@ -154,7 +154,6 @@ reg [1:0] q_counting;
 reg check_down, move_left, move_right;
 reg [3:0] check_left, check_right;
 reg [3:0] save;
-//reg [2:0] down_sqares_nb; // 00 - 1, 01 - 2, 10 - 3, 11 - 4
 
 pseudo_random_number_generator ps_rand(gen_next_block, rand_rst, seed, next_block);
 
@@ -168,6 +167,10 @@ detect frame_det(clk, VGA_VS, frame_passed);
 reg [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0];
 //row, column
 wire [4:0] pos1 [1:0], pos2 [1:0], pos3 [1:0], pos4[1:0];
+
+reg [3:0] filling [19:0];
+reg [2:0] distroy_nb;
+reg [4:0] dl1, dl2, dl3, dl4;
 
 wire [9:0] b_col;
 reg [3:0] board_column;
@@ -206,9 +209,7 @@ always @(posedge clk) begin
 	rand_rst <= 0;
 	gen_next_block <= 0;
 	check_down <= 0;
-	check_left <= 4'd0;
-	check_right <= 4'd0;
-	save <= 4'b0;
+	//save <= 4'b0;
 	move_left <= 0;
 	move_right <= 0;
 	
@@ -350,6 +351,7 @@ always @(posedge clk) begin
 			end
 		endcase
 
+		//to się powinno pojawiać już w falling albo po odczekaniu cyklu
 		if(|ram_columns[pos1[0][3:0]] || |ram_columns[pos2[0][3:0]]
 			|| |ram_columns[pos3[0][3:0]] || |ram_columns[pos4[0][3:0]]) q <= FAIL;
 	end
@@ -358,6 +360,7 @@ always @(posedge clk) begin
 		
 		case(save)
 			4'd1: begin
+				filling[pos1[1]] <= filling[pos1[1]] + 1;
 				we[pos1[0][3:0]] <= 1;
 				save <= 4'd2;
 			end
@@ -366,6 +369,7 @@ always @(posedge clk) begin
 				save <= 4'd3;
 			end
 			4'd3: begin
+				filling[pos2[1]] <= filling[pos2[1]] + 1;
 				we[pos2[0][3:0]] <= 1;
 				save <= 4'd4;
 			end
@@ -374,6 +378,7 @@ always @(posedge clk) begin
 				save <= 4'd5;
 			end
 			4'd5: begin
+				filling[pos3[1]] <= filling[pos3[1]] + 1;
 				we[pos3[0][3:0]] <= 1;
 				save <= 4'd6;
 			end
@@ -382,17 +387,30 @@ always @(posedge clk) begin
 				save <= 4'd7;
 			end
 			4'd7: begin
+				filling[pos4[1]] <= filling[pos4[1]] + 1;
 				we[pos4[0][3:0]] <= 1;
 				save <= 4'd8;
 			end
-			4'd8: begin
+			4'd8: save <= 4'd9;
+			4'd9: begin
+				/*
+				q <= DISTROY_LINE;
+				save <= 4'd0;
+				ram_row <= pos1[1];
+				distroy_nb <= 3'd0;
+				*/
+				
 				q <= START_FALLING; // tu potencjalnie przechodzimy do innego stanu, wtedy być może nie warto nawet czasami wchodzić do save
 				ram_row <= 5'd0;
 				block <= next_block;
 				gen_next_block <= 1;
 				wait_cnt <= 0;
+				
 			end
-			default: save <= 4'd0;			
+			default: begin
+				save <= 4'd0;	
+				ram_row <= pos1[1];
+			end		
 		endcase
 
 		if(check_down) begin
@@ -426,46 +444,48 @@ always @(posedge clk) begin
 				end
 			end
 		end
-		else begin
+		else if(~|save) begin
 			case(check_left)
 
-			4'd1: 	if(!|ram_columns[far_left_column - 1]) begin
+			4'd10: 	if(~|ram_columns[far_left_column - 1]) begin
 						ram_row <= pos2[1];
-						check_left <= 4'd2;
+						check_left <= 4'd11;
 					end
-			4'd2: 	if(!|ram_columns[far_left_column - 1]) begin
+			4'd11: 	if(~|ram_columns[far_left_column - 1]) begin
 						ram_row <= pos3[1];
-						check_left <= 4'd3;
+						check_left <= 4'd12;
 					end
-			4'd3: 	if(!|ram_columns[far_left_column - 1]) begin
+			4'd12: 	if(~|ram_columns[far_left_column - 1]) begin
 						ram_row <= pos4[1]; 
-						check_left <= 4'd4; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
+						check_left <= 4'd13; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
 					end
-			4'd4: 	if(!|ram_columns[far_left_column - 1]) begin
+			4'd13: 	if(~|ram_columns[far_left_column - 1]) begin
 						move_left <= 1;
+						check_left <= 4'd0;
 					end
-			default: check_left <= 4'd0;
+			default: check_left <= check_left;
 
 			endcase
 
 			case(check_right)
 
-			4'd1: 	if(!|ram_columns[far_right_column + 1]) begin
+			4'd10: 	if(~|ram_columns[far_right_column + 1]) begin
 						ram_row <= pos2[1];
-						check_right <= 4'd2;
+						check_right <= 4'd11;
 					end
-			4'd2: 	if(!|ram_columns[far_right_column + 1]) begin
+			4'd11: 	if(~|ram_columns[far_right_column + 1]) begin
 						ram_row <= pos3[1];
-						check_right <= 4'd3;
+						check_right <= 4'd12;
 					end
-			4'd3: 	if(!|ram_columns[far_right_column + 1]) begin
+			4'd12: 	if(~|ram_columns[far_right_column + 1]) begin
 						ram_row <= pos4[1]; 
-						check_right <= 4'd4; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
+						check_right <= 4'd13; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
 					end
-			4'd4: 	if(!|ram_columns[far_right_column + 1]) begin
+			4'd13: 	if(~|ram_columns[far_right_column + 1]) begin
 						move_right <= 1;
+						check_right <= 4'd0;
 					end
-			default: check_right <= 4'd0;
+			default: check_right <= check_right;
 
 			endcase
 		end
@@ -501,17 +521,27 @@ always @(posedge clk) begin
 		if(frame_passed) begin 
 
 			if(left && !right && far_left_column > 5'd0) begin
-				check_left <= 4'd1;
-				ram_row <= pos1[1];
+				if(check_left < 4'd3)
+					check_left <= check_left + 1;
+				else begin
+					check_left <= 4'd10;
+					ram_row <= pos1[1];
+				end
 			end
+			else check_left <= 4'd0;
 
 			if(right && !left && far_right_column < 5'd9) begin
-				check_right <= 4'd1;
-				ram_row <= pos1[1];
+				if(check_right < 4'd3)
+					check_right <= check_right + 1;
+				else begin
+					check_right <= 4'd10;
+					ram_row <= pos1[1];
+				end
 			end
+			else check_right <= 4'd0;
 
 			//if(sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
-			if(sq1[0] < 10'd140 && sq2[0] < 10'd140 && sq3[0] < 10'd140 && sq4[0] < 10'd140) begin
+			if(sq1[0] < 10'd100 && sq2[0] < 10'd100 && sq3[0] < 10'd100 && sq4[0] < 10'd100) begin
 				if(!down && wait_cnt < speed)
 					begin
 						wait_cnt <= wait_cnt + 1;
@@ -562,11 +592,150 @@ always @(posedge clk) begin
 	
 	// wchodzenie w stan distroy line będzie opierało się na liczniku zapełnionych klocków dla każdego rzędu
 	// - jeśli licznik i nowe pola które mielibyśmy teraz zapisywać sumują się do 10 -> przechodzimy tu
-	//DISTROY_LINE: 
-
-	//w FAIL trzeba wyczyścić pamięć przed powrotem do startu
+	/*
+	DISTROY_LINE: begin
+		case(save)
+			4'd1: begin
+				if(filling[pos1[1]] == 4'd10) begin
+					for(j = 0; j<10; j= j+1) begin
+						we[j] <= 1;
+					end
+					filling[pos1[1]] <= 4'd0;
+					distroy_nb <= 3'd1;
+					dl1 <= pos1[1];
+				end
+				save <= 4'd2;
+			end
+			4'd2: begin
+				ram_row <= pos2[1];
+				save <= 4'd3;
+			end
+			4'd3: begin
+				if(filling[pos2[1]] == 4'd10) begin
+					for(j = 0; j<10; j= j+1) begin
+						we[j] <= 1;
+					end
+					filling[pos2[1]] <= 4'd0;
+					case (distroy_nb) 
+					
+					3'd0: 	begin
+							distroy_nb <= 3'd1;
+							dl1 <= pos1[1];
+							end
+					3'd1: 	begin
+							distroy_nb <= 3'd2;
+							dl2 <= pos2[1];
+							end
+					default: distroy_nb <= 3'd0;
+					endcase
+				end
+				save <= 4'd4;
+			end
+			4'd4: begin
+				ram_row <= pos3[1];
+				save <= 4'd5;
+			end
+			4'd5: begin
+				if(filling[pos3[1]] == 4'd10) begin
+					for(j = 0; j<10; j= j+1) begin
+						we[j] <= 1;
+					end
+					filling[pos3[1]] <= 4'd0;
+					case (distroy_nb) 
+					
+					3'd0: 	begin
+							distroy_nb <= 3'd1;
+							dl1 <= pos1[1];
+							end
+					3'd1: 	begin
+							distroy_nb <= 3'd2;
+							dl2 <= pos2[1];
+							end
+					3'd2: 	begin
+							distroy_nb <= 3'd3;
+							dl3 <= pos3[1];
+							end
+					default: distroy_nb <= 3'd0;
+					endcase
+				end
+				save <= 4'd6;
+			end
+			4'd6: begin
+				ram_row <= pos4[1];
+				save <= 4'd7;
+			end
+			4'd7: begin
+				if(filling[pos1[1]] == 4'd10) begin
+					for(j = 0; j<10; j= j+1) begin
+						we[j] <= 1;
+					end
+					filling[pos1[1]] <= 4'd0;
+					case (distroy_nb) 
+					
+					3'd0: 	begin
+							distroy_nb <= 3'd1;
+							dl1 <= pos1[1];
+							end
+					3'd1: 	begin
+							distroy_nb <= 3'd2;
+							dl2 <= pos2[1];
+							end
+					3'd2: 	begin
+							distroy_nb <= 3'd3;
+							dl3 <= pos3[1];
+							end
+					3'd3: 	begin
+							distroy_nb <= 3'd4;
+							dl4 <= pos4[1];
+							end
+					default: distroy_nb <= 3'd0;
+					endcase
+				end
+				save <= 4'd8;
+			end
+			4'd8: begin
+				q <= START_FALLING; 
+				ram_row <= 5'd0;
+				block <= next_block;
+				gen_next_block <= 1;
+				wait_cnt <= 0;
+				save <= 4'd0;
+			end
+			default: begin
+				distroy_nb <= 0;
+				save <= 4'd1;
+			end		
+		endcase
+	end
+*/
 	FAIL: begin
-		if(|click) q <= START_SCREEN;
+		if(|click) begin
+			q <= CLEAN;
+			wait_cnt <= 6'd0;
+			ram_row <= 5'd0;
+		end
+	end
+
+	CLEAN: begin
+		if(wait_cnt >= 6'd19) begin
+			for(j = 0; j<20; j= j+1) begin
+				filling[j] <= 4'd0;
+			end
+			q <= START_SCREEN;
+		end
+		else 	casez(wait_cnt)
+				
+				6'b?????0: 	begin for(j = 0; j<10; j= j+1) begin
+								we[j] <= 1;
+							end
+							wait_cnt <= wait_cnt + 1;
+							end
+				6'b?????1: 	begin
+							ram_row <= ram_row + 1;
+							wait_cnt <= wait_cnt + 1;
+							end
+
+				endcase
 	end
 
 	default: q <= START_SCREEN;
