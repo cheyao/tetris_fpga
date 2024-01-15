@@ -154,23 +154,29 @@ reg [1:0] q_counting;
 reg check_down, move_left, move_right;
 reg [3:0] check_left, check_right;
 reg [3:0] save;
+reg [3:0] save2;
+//reg [2:0] down_sqares_nb; // 00 - 1, 01 - 2, 10 - 3, 11 - 4
 
 pseudo_random_number_generator ps_rand(gen_next_block, rand_rst, seed, next_block);
 
 wire frame_passed;
 reg [4:0] nearest_board_row, far_left_column, far_right_column;
 
-detect frame_det(clk, VGA_VS, frame_passed);
+reg rotate;
 
-//localization points
-//borders: left, right up, down [3:0]
-reg [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0];
-//row, column
-wire [4:0] pos1 [1:0], pos2 [1:0], pos3 [1:0], pos4[1:0];
+detect frame_det(clk, VGA_VS, frame_passed);
 
 reg [3:0] filling [19:0];
 reg [2:0] distroy_nb;
 reg [4:0] dl1, dl2, dl3, dl4;
+
+//localization points
+//borders: left, right up, down [3:0]
+reg [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0];
+//rotation point
+reg [8:0] x_centr, y_centr;
+//row, column
+wire [4:0] pos1 [1:0], pos2 [1:0], pos3 [1:0], pos4[1:0];
 
 wire [9:0] b_col;
 reg [3:0] board_column;
@@ -209,7 +215,9 @@ always @(posedge clk) begin
 	rand_rst <= 0;
 	gen_next_block <= 0;
 	check_down <= 0;
-	//save <= 4'b0;
+	check_left <= 4'd0;
+	check_right <= 4'd0;
+	save <= 4'b0;
 	move_left <= 0;
 	move_right <= 0;
 	
@@ -270,6 +278,7 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+			x_centr <= 9'd320; y_centr <= 9'd30;
 			far_left_column <= 5'd3;
 			far_right_column <= 5'd6;
 			
@@ -281,6 +290,7 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+			x_centr <= 9'd320; y_centr <= 9'd20;
 			far_left_column <= 5'd4;
 			far_right_column <= 5'd6;
 
@@ -292,6 +302,7 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd320; sq4[2] <= 10'd340; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
+			x_centr <= 9'd320; y_centr <= 9'd20;
 			far_left_column <= 5'd4;
 			far_right_column <= 5'd5;
 
@@ -303,6 +314,7 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+			x_centr <= 9'd320; y_centr <= 9'd20;
 			far_left_column <= 5'd4;
 			far_right_column <= 5'd6;
 
@@ -314,6 +326,7 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+			x_centr <= 9'd340; y_centr <= 9'd20;
 			far_left_column <= 5'd4;
 			far_right_column <= 5'd6;
 
@@ -325,6 +338,7 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
+			x_centr <= 9'd320; y_centr <= 9'd20;
 			far_left_column <= 5'd4;
 			far_right_column <= 5'd6;
 
@@ -336,6 +350,7 @@ always @(posedge clk) begin
 			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd0; sq2[0] <= 10'd20;
 			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd0; sq3[0] <= 10'd20;
 			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+			x_centr <= 9'd320; y_centr <= 9'd20;
 			far_left_column <= 5'd4;
 			far_right_column <= 5'd6;
 
@@ -351,13 +366,15 @@ always @(posedge clk) begin
 			end
 		endcase
 
-		//to się powinno pojawiać już w falling albo po odczekaniu cyklu
 		if(|ram_columns[pos1[0][3:0]] || |ram_columns[pos2[0][3:0]]
 			|| |ram_columns[pos3[0][3:0]] || |ram_columns[pos4[0][3:0]]) q <= FAIL;
 	end
 
 	FALLING: begin //wszystie operacje na ramie wydarzają się po VS czyli na blank czasie
 		
+		if(click[2])
+			rotate <= 1;
+
 		case(save)
 			4'd1: begin
 				filling[pos1[1]] <= filling[pos1[1]] + 1;
@@ -391,26 +408,21 @@ always @(posedge clk) begin
 				we[pos4[0][3:0]] <= 1;
 				save <= 4'd8;
 			end
-			4'd8: save <= 4'd9;
-			4'd9: begin
-				/*
+			4'd8: begin
+
 				q <= DISTROY_LINE;
-				save <= 4'd0;
 				ram_row <= pos1[1];
+				save2 <= 1;
 				distroy_nb <= 3'd0;
-				*/
-				
+				/*
 				q <= START_FALLING; // tu potencjalnie przechodzimy do innego stanu, wtedy być może nie warto nawet czasami wchodzić do save
 				ram_row <= 5'd0;
 				block <= next_block;
 				gen_next_block <= 1;
 				wait_cnt <= 0;
-				
+				*/
 			end
-			default: begin
-				save <= 4'd0;	
-				ram_row <= pos1[1];
-			end		
+			default: save <= 4'd0;			
 		endcase
 
 		if(check_down) begin
@@ -432,6 +444,7 @@ always @(posedge clk) begin
 				sq3[1] <= sq3[1] + 1;
 				sq4[0] <= sq4[0] + 1;
 				sq4[1] <= sq4[1] + 1;
+				y_centr <= y_centr + 1;
 				wait_cnt <= 0;
 				nearest_board_row <= nearest_board_row + 1;
 				if(|check_left) begin 
@@ -444,48 +457,46 @@ always @(posedge clk) begin
 				end
 			end
 		end
-		else if(~|save) begin
+		else if (~|save) begin
 			case(check_left)
 
-			4'd10: 	if(~|ram_columns[far_left_column - 1]) begin
+			4'd1: 	if(!|ram_columns[far_left_column - 1]) begin
 						ram_row <= pos2[1];
-						check_left <= 4'd11;
+						check_left <= 4'd2;
 					end
-			4'd11: 	if(~|ram_columns[far_left_column - 1]) begin
+			4'd2: 	if(!|ram_columns[far_left_column - 1]) begin
 						ram_row <= pos3[1];
-						check_left <= 4'd12;
+						check_left <= 4'd3;
 					end
-			4'd12: 	if(~|ram_columns[far_left_column - 1]) begin
+			4'd3: 	if(!|ram_columns[far_left_column - 1]) begin
 						ram_row <= pos4[1]; 
-						check_left <= 4'd13; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
+						check_left <= 4'd4; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
 					end
-			4'd13: 	if(~|ram_columns[far_left_column - 1]) begin
+			4'd4: 	if(!|ram_columns[far_left_column - 1]) begin
 						move_left <= 1;
-						check_left <= 4'd0;
 					end
-			default: check_left <= check_left;
+			default: check_left <= 4'd0;
 
 			endcase
 
 			case(check_right)
 
-			4'd10: 	if(~|ram_columns[far_right_column + 1]) begin
+			4'd1: 	if(!|ram_columns[far_right_column + 1]) begin
 						ram_row <= pos2[1];
-						check_right <= 4'd11;
+						check_right <= 4'd2;
 					end
-			4'd11: 	if(~|ram_columns[far_right_column + 1]) begin
+			4'd2: 	if(!|ram_columns[far_right_column + 1]) begin
 						ram_row <= pos3[1];
-						check_right <= 4'd12;
+						check_right <= 4'd3;
 					end
-			4'd12: 	if(~|ram_columns[far_right_column + 1]) begin
+			4'd3: 	if(!|ram_columns[far_right_column + 1]) begin
 						ram_row <= pos4[1]; 
-						check_right <= 4'd13; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
+						check_right <= 4'd4; //asynchroniczny odczyt więc nie czekam dłużej, ale nwm
 					end
-			4'd13: 	if(~|ram_columns[far_right_column + 1]) begin
+			4'd4: 	if(!|ram_columns[far_right_column + 1]) begin
 						move_right <= 1;
-						check_right <= 4'd0;
 					end
-			default: check_right <= check_right;
+			default: check_right <= 4'd0;
 
 			endcase
 		end
@@ -499,6 +510,7 @@ always @(posedge clk) begin
 			sq3[3] <= sq3[3] - 20;
 			sq4[2] <= sq4[2] - 20;
 			sq4[3] <= sq4[3] - 20;
+			x_centr <= x_centr - 20;
 			move_left <= 0;
 			far_left_column <= far_left_column - 1;
 			far_right_column <= far_right_column - 1;
@@ -513,6 +525,7 @@ always @(posedge clk) begin
 			sq3[3] <= sq3[3] + 20;
 			sq4[2] <= sq4[2] + 20;
 			sq4[3] <= sq4[3] + 20;
+			x_centr <= x_centr + 20;
 			move_left <= 0;
 			far_right_column <= far_right_column + 1;
 			far_left_column <= far_left_column + 1;
@@ -541,7 +554,7 @@ always @(posedge clk) begin
 			else check_right <= 4'd0;
 
 			//if(sq1[0] < 10'd440 && sq2[0] < 10'd440 && sq3[0] < 10'd440 && sq4[0] < 10'd440) begin
-			if(sq1[0] < 10'd100 && sq2[0] < 10'd100 && sq3[0] < 10'd100 && sq4[0] < 10'd100) begin
+			if(sq1[0] < 10'd140 && sq2[0] < 10'd140 && sq3[0] < 10'd140 && sq4[0] < 10'd140) begin
 				if(!down && wait_cnt < speed)
 					begin
 						wait_cnt <= wait_cnt + 1;
@@ -580,6 +593,7 @@ always @(posedge clk) begin
 					sq3[1] <= sq3[1] + 1;
 					sq4[0] <= sq4[0] + 1;
 					sq4[1] <= sq4[1] + 1;
+					y_centr <= y_centr + 1;
 					wait_cnt <= 0;
 				end
 			end
@@ -587,14 +601,39 @@ always @(posedge clk) begin
 				save <= 4'd1;
 				ram_row <= pos1[1];
 			end
+
+			if(rotate) begin // to nie tu oczywiście
+				sq1[3] <= sq1[1] - y_centr + x_centr;
+				sq1[0] <= x_centr - sq1[3] + y_centr;
+				sq1[2] <= sq1[0] - y_centr + x_centr;
+				sq1[1] <= x_centr - sq1[2] + y_centr;
+
+				sq2[3] <= sq2[1] - y_centr + x_centr;
+				sq2[0] <= x_centr - sq2[3] + y_centr;
+				sq2[2] <= sq2[0] - y_centr + x_centr;
+				sq2[1] <= x_centr - sq2[2] + y_centr;
+
+				sq3[3] <= sq3[1] - y_centr + x_centr;
+				sq3[0] <= x_centr - sq3[3] + y_centr;
+				sq3[2] <= sq3[0] - y_centr + x_centr;
+				sq3[1] <= x_centr - sq3[2] + y_centr;
+
+				sq4[3] <= sq4[1] - y_centr + x_centr;
+				sq4[0] <= x_centr - sq4[3] + y_centr;
+				sq4[2] <= sq4[0] - y_centr + x_centr;
+				sq4[1] <= x_centr - sq4[2] + y_centr;
+
+				rotate <= 0;
+
+				//tu trzeba też zmienić far left cośtam
+			end
 		end
 	end
 	
 	// wchodzenie w stan distroy line będzie opierało się na liczniku zapełnionych klocków dla każdego rzędu
 	// - jeśli licznik i nowe pola które mielibyśmy teraz zapisywać sumują się do 10 -> przechodzimy tu
-	/*
-	DISTROY_LINE: begin
-		case(save)
+	DISTROY_LINE: 
+		case(save2)
 			4'd1: begin
 				if(filling[pos1[1]] == 4'd10) begin
 					for(j = 0; j<10; j= j+1) begin
@@ -604,11 +643,11 @@ always @(posedge clk) begin
 					distroy_nb <= 3'd1;
 					dl1 <= pos1[1];
 				end
-				save <= 4'd2;
+				save2 <= 4'd2;
 			end
 			4'd2: begin
 				ram_row <= pos2[1];
-				save <= 4'd3;
+				save2 <= 4'd3;
 			end
 			4'd3: begin
 				if(filling[pos2[1]] == 4'd10) begin
@@ -629,11 +668,11 @@ always @(posedge clk) begin
 					default: distroy_nb <= 3'd0;
 					endcase
 				end
-				save <= 4'd4;
+				save2 <= 4'd4;
 			end
 			4'd4: begin
 				ram_row <= pos3[1];
-				save <= 4'd5;
+				save2 <= 4'd5;
 			end
 			4'd5: begin
 				if(filling[pos3[1]] == 4'd10) begin
@@ -658,11 +697,11 @@ always @(posedge clk) begin
 					default: distroy_nb <= 3'd0;
 					endcase
 				end
-				save <= 4'd6;
+				save2 <= 4'd6;
 			end
 			4'd6: begin
 				ram_row <= pos4[1];
-				save <= 4'd7;
+				save2 <= 4'd7;
 			end
 			4'd7: begin
 				if(filling[pos1[1]] == 4'd10) begin
@@ -691,7 +730,7 @@ always @(posedge clk) begin
 					default: distroy_nb <= 3'd0;
 					endcase
 				end
-				save <= 4'd8;
+				save2 <= 4'd8;
 			end
 			4'd8: begin
 				q <= START_FALLING; 
@@ -699,15 +738,15 @@ always @(posedge clk) begin
 				block <= next_block;
 				gen_next_block <= 1;
 				wait_cnt <= 0;
-				save <= 4'd0;
+				save2 <= 4'd0;
 			end
 			default: begin
 				distroy_nb <= 0;
-				save <= 4'd1;
+				save2 <= 4'd1;
 			end		
 		endcase
-	end
-*/
+
+	//w FAIL trzeba wyczyścić pamięć przed powrotem do startu
 	FAIL: begin
 		if(|click) begin
 			q <= CLEAN;
@@ -718,9 +757,11 @@ always @(posedge clk) begin
 
 	CLEAN: begin
 		if(wait_cnt >= 6'd19) begin
+			
 			for(j = 0; j<20; j= j+1) begin
 				filling[j] <= 4'd0;
 			end
+			
 			q <= START_SCREEN;
 		end
 		else 	casez(wait_cnt)
@@ -737,7 +778,6 @@ always @(posedge clk) begin
 
 				endcase
 	end
-
 	default: q <= START_SCREEN;
 
 	endcase
