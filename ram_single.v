@@ -5,7 +5,9 @@ module ram_single( //powinno zmapować się na MLAB - jednoportowe z asnc odczyt
     input we, clk
 );
 
-reg [23:0] mem [19:0];
+reg [23:0] mem [20:0];
+
+initial mem[4] = 24'hF;
 
 assign q = mem[a];
 
