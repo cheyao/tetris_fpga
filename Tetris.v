@@ -260,92 +260,100 @@ always @(posedge clk) begin
 
 	START_FALLING: begin
 
-		q <= FALLING;
+		if(~|cnt) begin
 
-		case(block)
+			case(block)
 
-		I: 	begin
+			I: 	begin
 
-			sq1[3] <= 10'd280; sq1[2] <= 10'd300; sq1[1] <= 10'd20; sq1[0] <= 10'd40;
-			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
-			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
-			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
-			x_centr <= 9'd320; y_centr <= 9'd20;
-			
-			end
+				sq1[3] <= 10'd280; sq1[2] <= 10'd300; sq1[1] <= 10'd20; sq1[0] <= 10'd40;
+				sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+				sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+				sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+				x_centr <= 9'd320; y_centr <= 9'd20;
+				
+				end
 
-		T:	begin
+			T:	begin
 
-			sq1[3] <= 10'd320; sq1[2] <= 10'd340; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
-			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
-			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
-			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
-			x_centr <= 9'd320; y_centr <= 9'd20;
+				sq1[3] <= 10'd320; sq1[2] <= 10'd340; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+				sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+				sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+				sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+				x_centr <= 9'd330; y_centr <= 9'd30;
 
-			end
+				end
 
-		O:	begin
+			O:	begin
 
-			sq1[3] <= 10'd300; sq1[2] <= 10'd320; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
-			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
-			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
-			sq4[3] <= 10'd320; sq4[2] <= 10'd340; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
-			x_centr <= 9'd320; y_centr <= 9'd20;
+				sq1[3] <= 10'd300; sq1[2] <= 10'd320; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+				sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+				sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+				sq4[3] <= 10'd320; sq4[2] <= 10'd340; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
+				x_centr <= 9'd320; y_centr <= 9'd20;
 
-			end
+				end
 
-		L:	begin
+			L:	begin
 
-			sq1[3] <= 10'd340; sq1[2] <= 10'd360; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
-			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
-			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
-			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
-			x_centr <= 9'd320; y_centr <= 9'd20;
+				sq1[3] <= 10'd340; sq1[2] <= 10'd360; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+				sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+				sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+				sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+				x_centr <= 9'd330; y_centr <= 9'd30;
 
-			end
+				end
 
-		J:	begin
+			J:	begin
 
-			sq1[3] <= 10'd300; sq1[2] <= 10'd320; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
-			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
-			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
-			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
-			x_centr <= 9'd340; y_centr <= 9'd20;
+				sq1[3] <= 10'd300; sq1[2] <= 10'd320; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+				sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+				sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+				sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+				x_centr <= 9'd330; y_centr <= 9'd30;
 
-			end
+				end
 
-		S:	begin
+			S:	begin
 
-			sq1[3] <= 10'd320; sq1[2] <= 10'd340; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
-			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
-			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
-			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
-			x_centr <= 9'd320; y_centr <= 9'd20;
+				sq1[3] <= 10'd320; sq1[2] <= 10'd340; sq1[1] <= 10'd0; sq1[0] <= 10'd20;
+				sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd20; sq2[0] <= 10'd40;
+				sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd20; sq3[0] <= 10'd40;
+				sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd0; sq4[0] <= 10'd20;
+				x_centr <= 9'd330; y_centr <= 9'd30;
 
-			end
+				end
 
-		Z:	begin
+			Z:	begin
 
-			sq1[3] <= 10'd320; sq1[2] <= 10'd340; sq1[1] <= 10'd20; sq1[0] <= 10'd40;
-			sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd0; sq2[0] <= 10'd20;
-			sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd0; sq3[0] <= 10'd20;
-			sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
-			x_centr <= 9'd320; y_centr <= 9'd20;
+				sq1[3] <= 10'd320; sq1[2] <= 10'd340; sq1[1] <= 10'd20; sq1[0] <= 10'd40;
+				sq2[3] <= 10'd300; sq2[2] <= 10'd320; sq2[1] <= 10'd0; sq2[0] <= 10'd20;
+				sq3[3] <= 10'd320; sq3[2] <= 10'd340; sq3[1] <= 10'd0; sq3[0] <= 10'd20;
+				sq4[3] <= 10'd340; sq4[2] <= 10'd360; sq4[1] <= 10'd20; sq4[0] <= 10'd40;
+				x_centr <= 9'd330; y_centr <= 9'd30;
 
-			end
+				end
 
-		default: begin
+			default: begin
 
-			sq1[3] <= 10'd0; sq1[2] <= 10'd0; sq1[1] <= 10'd0; sq1[0] <= 10'd0;
-			sq2[3] <= 10'd0; sq2[2] <= 10'd0; sq2[1] <= 10'd0; sq2[0] <= 10'd0;
-			sq3[3] <= 10'd0; sq3[2] <= 10'd0; sq3[1] <= 10'd0; sq3[0] <= 10'd0;
-			sq4[3] <= 10'd0; sq4[2] <= 10'd0; sq4[1] <= 10'd0; sq4[0] <= 10'd0;
+				sq1[3] <= 10'd0; sq1[2] <= 10'd0; sq1[1] <= 10'd0; sq1[0] <= 10'd0;
+				sq2[3] <= 10'd0; sq2[2] <= 10'd0; sq2[1] <= 10'd0; sq2[0] <= 10'd0;
+				sq3[3] <= 10'd0; sq3[2] <= 10'd0; sq3[1] <= 10'd0; sq3[0] <= 10'd0;
+				sq4[3] <= 10'd0; sq4[2] <= 10'd0; sq4[1] <= 10'd0; sq4[0] <= 10'd0;
 
-			end
-		endcase
-
-		if(|ram_columns[pos1[0][3:0]] || |ram_columns[pos2[0][3:0]]
-			|| |ram_columns[pos3[0][3:0]] || |ram_columns[pos4[0][3:0]]) q <= FAIL;
+				end
+			endcase
+			ram_row <= 0;
+			cnt <= 6'd1;
+		end
+		else if(|ram_columns[pos1[0][3:0]] || |ram_columns[pos2[0][3:0]]
+			|| |ram_columns[pos3[0][3:0]] || |ram_columns[pos4[0][3:0]]) 
+			q <= FAIL;
+		else begin
+			q <= FALLING;
+			cnt <= 0;
+		end
+		
 	end
 
 	FALLING: begin //wszystie operacje na ramie wydarzają się po VS czyli na blank czasie
@@ -361,15 +369,17 @@ always @(posedge clk) begin
 					if(check_left < 4'd3)
 						check_left <= check_left + 1;
 					else begin
-						sq1[2] <= sq1[2] - 20;
-						sq1[3] <= sq1[3] - 20;
-						sq2[2] <= sq2[2] - 20;
-						sq2[3] <= sq2[3] - 20;
-						sq3[2] <= sq3[2] - 20;
-						sq3[3] <= sq3[3] - 20;
-						sq4[2] <= sq4[2] - 20;
-						sq4[3] <= sq4[3] - 20;
-						x_centr <= x_centr - 20;
+						if (pos1[0] > 5'd0 && pos2[0] > 5'd0 && pos3[0] > 5'd0 && pos4[0] > 5'd0) begin
+							sq1[2] <= sq1[2] - 20;
+							sq1[3] <= sq1[3] - 20;
+							sq2[2] <= sq2[2] - 20;
+							sq2[3] <= sq2[3] - 20;
+							sq3[2] <= sq3[2] - 20;
+							sq3[3] <= sq3[3] - 20;
+							sq4[2] <= sq4[2] - 20;
+							sq4[3] <= sq4[3] - 20;
+							x_centr <= x_centr - 20;
+						end
 						check_left <= 0;
 					end
 				end
@@ -383,15 +393,17 @@ always @(posedge clk) begin
 					if(check_right < 4'd3)
 						check_right <= check_right + 1;
 					else begin
-						sq1[2] <= sq1[2] + 20;
-						sq1[3] <= sq1[3] + 20;
-						sq2[2] <= sq2[2] + 20;
-						sq2[3] <= sq2[3] + 20;
-						sq3[2] <= sq3[2] + 20;
-						sq3[3] <= sq3[3] + 20;
-						sq4[2] <= sq4[2] + 20;
-						sq4[3] <= sq4[3] + 20;
-						x_centr <= x_centr + 20;
+						if (pos1[0] < 5'd9 && pos2[0] < 5'd9 && pos3[0] < 5'd9 && pos4[0] < 5'd9)begin
+							sq1[2] <= sq1[2] + 20;
+							sq1[3] <= sq1[3] + 20;
+							sq2[2] <= sq2[2] + 20;
+							sq2[3] <= sq2[3] + 20;
+							sq3[2] <= sq3[2] + 20;
+							sq3[3] <= sq3[3] + 20;
+							sq4[2] <= sq4[2] + 20;
+							sq4[3] <= sq4[3] + 20;
+							x_centr <= x_centr + 20;
+						end
 						check_right <= 0;
 					end
 				end
@@ -428,7 +440,8 @@ always @(posedge clk) begin
 				cnt <= 6'd4;
 			end
 		6'd4: 
-			if (|ram_columns[pos1[0][3:0]]) begin
+			if (|ram_columns[pos1[0][3:0]] || pos1[0] > 5'd9 || pos2[0] > 5'd9 ||
+				 pos3[0] > 5'd9 || pos4[0] > 5'd9) begin
 				sq1[0] <= sq1_buf[0]; sq2[0] <= sq2_buf[0]; sq3[0] <= sq3_buf[0]; sq4[0] <= sq4_buf[0];
 				sq1[1] <= sq1_buf[1]; sq2[1] <= sq2_buf[1]; sq3[1] <= sq3_buf[1]; sq4[1] <= sq4_buf[1];
 				sq1[2] <= sq1_buf[2]; sq2[2] <= sq2_buf[2]; sq3[2] <= sq3_buf[2]; sq4[2] <= sq4_buf[2];

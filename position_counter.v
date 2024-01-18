@@ -24,7 +24,7 @@ module position_counter (
 		10'd380: pos0 = 5'd7;
 		10'd400: pos0 = 5'd8;
 		10'd420: pos0 = 5'd9;
-		default: pos0 = 5'd5;
+		default: pos0 = 5'd10;
 	    endcase
 
         casez(act_row)
