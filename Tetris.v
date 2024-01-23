@@ -171,6 +171,7 @@ reg [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0];
 reg [9:0] sq1_buf [3:0], sq2_buf [3:0], sq3_buf [3:0], sq4_buf [3:0];
 //rotation point
 reg [8:0] x_centr, y_centr;
+reg [8:0] x_centr_buf, y_centr_buf;
 //row, column
 wire [4:0] pos1 [1:0], pos2 [1:0], pos3 [1:0], pos4[1:0];
 
@@ -181,7 +182,7 @@ reg [5:0] cnt;
 
 generate
 	for(i = 0; i<10; i = i+1) begin : bc
-		assign b_col[i] = c < 10'd240 + 20 * i ;
+		assign b_col[i] = c < 10'd240 + 20 * i;
 	end
 endgenerate
 
@@ -228,7 +229,7 @@ always @(posedge clk) begin
 	case(q)
 
 	START_SCREEN: begin		
-		speed <= 6'd8; //zmiana przy symulacji 1/8
+		speed <= 6'd10; //zmiana przy symulacji 1/8
 		if(|click) begin
 			q <= COUNTING;
 			rand_rst <= 1; 
@@ -239,7 +240,7 @@ always @(posedge clk) begin
 
 	COUNTING: begin
 		if(frame_passed) begin 
-			if(wait_cnt < 6'd30) //zmiana przy symulacji 5/30
+			if(wait_cnt < 6'd40) //zmiana przy symulacji 5/30
 				wait_cnt <= wait_cnt + 1;
 			else begin
 				if(q_counting > 0) begin
@@ -365,7 +366,7 @@ always @(posedge clk) begin
 		6'd1:
 			begin
 				if(left && !right) begin
-					if(check_left < 4'd5)
+					if(check_left < 4'd5) //przy symulacji 2/5
 						check_left <= check_left + 1;
 					else begin
 						if (pos1[0] > 5'd0 && pos2[0] > 5'd0 && pos3[0] > 5'd0 && pos4[0] > 5'd0) begin
@@ -389,7 +390,7 @@ always @(posedge clk) begin
 		6'd2:
 			begin
 				if(right && !left) begin
-					if(check_right < 4'd5)
+					if(check_right < 4'd5) //przy symulacji 2/5
 						check_right <= check_right + 1;
 					else begin
 						if (pos1[0] < 5'd9 && pos2[0] < 5'd9 && pos3[0] < 5'd9 && pos4[0] < 5'd9)begin
@@ -434,10 +435,10 @@ always @(posedge clk) begin
 					sq4[1] <= x_centr - sq4[2] + y_centr;
 
 					rotate <= 0;
-					ram_row <= pos1[1];
 				end
 				cnt <= 6'd4;
-			end
+				ram_row <= pos1[1];
+			end //MUSZĄ SIĘ BUFOROWAĆ TEŻ X I Y
 		6'd4: 
 			if (|ram_columns[pos1[0][3:0]] || pos1[0] > 5'd9 || pos2[0] > 5'd9 ||
 				 pos3[0] > 5'd9 || pos4[0] > 5'd9) begin
@@ -445,6 +446,8 @@ always @(posedge clk) begin
 				sq1[1] <= sq1_buf[1]; sq2[1] <= sq2_buf[1]; sq3[1] <= sq3_buf[1]; sq4[1] <= sq4_buf[1];
 				sq1[2] <= sq1_buf[2]; sq2[2] <= sq2_buf[2]; sq3[2] <= sq3_buf[2]; sq4[2] <= sq4_buf[2];
 				sq1[3] <= sq1_buf[3]; sq2[3] <= sq2_buf[3]; sq3[3] <= sq3_buf[3]; sq4[3] <= sq4_buf[3];
+				x_centr <= x_centr_buf;
+				y_centr <= y_centr_buf;
 				cnt <= 6'd8;
 			end
 			else begin
@@ -457,6 +460,8 @@ always @(posedge clk) begin
 				sq1[1] <= sq1_buf[1]; sq2[1] <= sq2_buf[1]; sq3[1] <= sq3_buf[1]; sq4[1] <= sq4_buf[1];
 				sq1[2] <= sq1_buf[2]; sq2[2] <= sq2_buf[2]; sq3[2] <= sq3_buf[2]; sq4[2] <= sq4_buf[2];
 				sq1[3] <= sq1_buf[3]; sq2[3] <= sq2_buf[3]; sq3[3] <= sq3_buf[3]; sq4[3] <= sq4_buf[3];
+				x_centr <= x_centr_buf;
+				y_centr <= y_centr_buf;
 				cnt <= 6'd8;
 			end
 			else begin
@@ -469,6 +474,8 @@ always @(posedge clk) begin
 				sq1[1] <= sq1_buf[1]; sq2[1] <= sq2_buf[1]; sq3[1] <= sq3_buf[1]; sq4[1] <= sq4_buf[1];
 				sq1[2] <= sq1_buf[2]; sq2[2] <= sq2_buf[2]; sq3[2] <= sq3_buf[2]; sq4[2] <= sq4_buf[2];
 				sq1[3] <= sq1_buf[3]; sq2[3] <= sq2_buf[3]; sq3[3] <= sq3_buf[3]; sq4[3] <= sq4_buf[3];
+				x_centr <= x_centr_buf;
+				y_centr <= y_centr_buf;
 				cnt <= 6'd8;
 			end
 			else begin
@@ -482,18 +489,22 @@ always @(posedge clk) begin
 					sq1[1] <= sq1_buf[1]; sq2[1] <= sq2_buf[1]; sq3[1] <= sq3_buf[1]; sq4[1] <= sq4_buf[1];
 					sq1[2] <= sq1_buf[2]; sq2[2] <= sq2_buf[2]; sq3[2] <= sq3_buf[2]; sq4[2] <= sq4_buf[2];
 					sq1[3] <= sq1_buf[3]; sq2[3] <= sq2_buf[3]; sq3[3] <= sq3_buf[3]; sq4[3] <= sq4_buf[3];
+					x_centr <= x_centr_buf;
+					y_centr <= y_centr_buf;
 				end
 				else begin
 					sq1_buf[0] <= sq1[0]; sq2_buf[0] <= sq2[0]; sq3_buf[0] <= sq3[0]; sq4_buf[0] <= sq4[0];
 					sq1_buf[1] <= sq1[1]; sq2_buf[1] <= sq2[1]; sq3_buf[1] <= sq3[1]; sq4_buf[1] <= sq4[1];
 					sq1_buf[2] <= sq1[2]; sq2_buf[2] <= sq2[2]; sq3_buf[2] <= sq3[2]; sq4_buf[2] <= sq4[2];
 					sq1_buf[3] <= sq1[3]; sq2_buf[3] <= sq2[3]; sq3_buf[3] <= sq3[3]; sq4_buf[3] <= sq4[3];
+					x_centr_buf <= x_centr;
+					y_centr_buf <= y_centr;
 				end
 				cnt <= 6'd8;
 			end	
 		6'd8:
 			begin	
-				if(!down && wait_cnt < speed) // barierę na czwartym polu ustawiłam
+				if(!down && wait_cnt < speed)
 					begin
 						wait_cnt <= wait_cnt + 1;
 					end
@@ -524,6 +535,8 @@ always @(posedge clk) begin
 				sq1[1] <= sq1_buf[1]; sq2[1] <= sq2_buf[1]; sq3[1] <= sq3_buf[1]; sq4[1] <= sq4_buf[1];
 				sq1[2] <= sq1_buf[2]; sq2[2] <= sq2_buf[2]; sq3[2] <= sq3_buf[2]; sq4[2] <= sq4_buf[2];
 				sq1[3] <= sq1_buf[3]; sq2[3] <= sq2_buf[3]; sq3[3] <= sq3_buf[3]; sq4[3] <= sq4_buf[3];
+				x_centr <= x_centr_buf;
+				y_centr <= y_centr_buf;
 			end
 			else begin
 				ram_row <= pos2[1];
@@ -536,6 +549,8 @@ always @(posedge clk) begin
 				sq1[1] <= sq1_buf[1]; sq2[1] <= sq2_buf[1]; sq3[1] <= sq3_buf[1]; sq4[1] <= sq4_buf[1];
 				sq1[2] <= sq1_buf[2]; sq2[2] <= sq2_buf[2]; sq3[2] <= sq3_buf[2]; sq4[2] <= sq4_buf[2];
 				sq1[3] <= sq1_buf[3]; sq2[3] <= sq2_buf[3]; sq3[3] <= sq3_buf[3]; sq4[3] <= sq4_buf[3];
+				x_centr <= x_centr_buf;
+				y_centr <= y_centr_buf;
 			end
 			else begin
 				ram_row <= pos3[1];
@@ -549,6 +564,8 @@ always @(posedge clk) begin
 				sq1[1] <= sq1_buf[1]; sq2[1] <= sq2_buf[1]; sq3[1] <= sq3_buf[1]; sq4[1] <= sq4_buf[1];
 				sq1[2] <= sq1_buf[2]; sq2[2] <= sq2_buf[2]; sq3[2] <= sq3_buf[2]; sq4[2] <= sq4_buf[2];
 				sq1[3] <= sq1_buf[3]; sq2[3] <= sq2_buf[3]; sq3[3] <= sq3_buf[3]; sq4[3] <= sq4_buf[3];
+				x_centr <= x_centr_buf;
+				y_centr <= y_centr_buf;
 			end
 			else begin
 				ram_row <= pos4[1];
@@ -561,6 +578,8 @@ always @(posedge clk) begin
 				sq1[1] <= sq1_buf[1]; sq2[1] <= sq2_buf[1]; sq3[1] <= sq3_buf[1]; sq4[1] <= sq4_buf[1];
 				sq1[2] <= sq1_buf[2]; sq2[2] <= sq2_buf[2]; sq3[2] <= sq3_buf[2]; sq4[2] <= sq4_buf[2];
 				sq1[3] <= sq1_buf[3]; sq2[3] <= sq2_buf[3]; sq3[3] <= sq3_buf[3]; sq4[3] <= sq4_buf[3];
+				x_centr <= x_centr_buf;
+				y_centr <= y_centr_buf;
 			end
 			else begin
 				cnt <= 6'd0;
@@ -623,6 +642,8 @@ always @(posedge clk) begin
 			sq1_buf[1] <= sq1[1]; sq2_buf[1] <= sq2[1]; sq3_buf[1] <= sq3[1]; sq4_buf[1] <= sq4[1];
 			sq1_buf[2] <= sq1[2]; sq2_buf[2] <= sq2[2]; sq3_buf[2] <= sq3[2]; sq4_buf[2] <= sq4[2];
 			sq1_buf[3] <= sq1[3]; sq2_buf[3] <= sq2[3]; sq3_buf[3] <= sq3[3]; sq4_buf[3] <= sq4[3];
+			x_centr_buf <= x_centr;
+			y_centr_buf <= y_centr;
 			cnt <= 6'd1;
 		end
 		
@@ -753,7 +774,7 @@ always @(posedge clk) begin
 	end
 
 	CLEAN: begin
-		if(wait_cnt >= 6'd19) begin
+		if(wait_cnt >= 6'd39) begin
 			
 			for(j = 0; j<20; j= j+1) begin
 				filling[j] <= 4'd0;
