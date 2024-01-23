@@ -48,7 +48,7 @@ module position_counter (
 		20'b??100000000000000000: pos1 = 5'd17;
 		20'b?1000000000000000000: pos1 = 5'd18;
 		20'b10000000000000000000: pos1 = 5'd19;
-		default: pos1 = 5'd0;
+		default: pos1 = 5'd20;
 	    endcase
     end
 endmodule

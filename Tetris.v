@@ -41,16 +41,15 @@ module Tetris(
 );
 
 wire clk;
-assign clk = CLOCK_50;
+//assign clk = CLOCK_50;
 //WYRZUCONE DO SYMULACJI, MUSI WRÓCIĆ DO ODPALENIA SPRZĘTOWEGO
-//clock_divider pll(clk, CLOCK_50, 0);
+clock_divider pll(clk, CLOCK_50, 0);
 
 // delayed keys signals
 wire down; 
 wire rotation;
 wire left;
 wire right;
-//muszę znaleźć inny reset
 wire [3:0] click; // clicking detectors
 
 synchronizer syn_key1(clk, ~KEY[0], right);
@@ -96,7 +95,7 @@ generate
 	end
 
 	for(i = 0; i<10; i = i+1) begin : data
-		assign d[i] = q == CLEAN || q == DISTROY_LINE? 0 : block_color;
+		assign d[i] = q == CLEAN || q == DISTROY_LINE ? 0 : block_color;
 	end
 endgenerate
 
@@ -229,7 +228,7 @@ always @(posedge clk) begin
 	case(q)
 
 	START_SCREEN: begin		
-		speed <= 6'd1; //zmiana przy symulacji 1/6
+		speed <= 6'd8; //zmiana przy symulacji 1/8
 		if(|click) begin
 			q <= COUNTING;
 			rand_rst <= 1; 
@@ -240,7 +239,7 @@ always @(posedge clk) begin
 
 	COUNTING: begin
 		if(frame_passed) begin 
-			if(wait_cnt < 6'd5) //zmiana przy symulacji 5/30
+			if(wait_cnt < 6'd30) //zmiana przy symulacji 5/30
 				wait_cnt <= wait_cnt + 1;
 			else begin
 				if(q_counting > 0) begin
@@ -366,7 +365,7 @@ always @(posedge clk) begin
 		6'd1:
 			begin
 				if(left && !right) begin
-					if(check_left < 4'd3)
+					if(check_left < 4'd5)
 						check_left <= check_left + 1;
 					else begin
 						if (pos1[0] > 5'd0 && pos2[0] > 5'd0 && pos3[0] > 5'd0 && pos4[0] > 5'd0) begin
@@ -390,7 +389,7 @@ always @(posedge clk) begin
 		6'd2:
 			begin
 				if(right && !left) begin
-					if(check_right < 4'd3)
+					if(check_right < 4'd5)
 						check_right <= check_right + 1;
 					else begin
 						if (pos1[0] < 5'd9 && pos2[0] < 5'd9 && pos3[0] < 5'd9 && pos4[0] < 5'd9)begin
@@ -611,7 +610,7 @@ always @(posedge clk) begin
 
 			q <= DISTROY_LINE;
 			ram_row <= pos1[1];
-			save2 <= 1;
+			save2 <= 4'd1;
 			distroy_nb <= 3'd0;
 			cnt <= 0;
 		end
@@ -745,7 +744,6 @@ always @(posedge clk) begin
 			end		
 		endcase
 
-	//w FAIL trzeba wyczyścić pamięć przed powrotem do startu
 	FAIL: begin
 		if(|click) begin
 			q <= CLEAN;
