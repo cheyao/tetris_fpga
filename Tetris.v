@@ -629,9 +629,9 @@ always @(posedge clk) begin
 
 			q <= DISTROY_LINE;
 			ram_row <= pos1[1];
-			save2 <= 4'd1;
+			//save2 <= 4'd1;
 			distroy_nb <= 3'd0;
-			cnt <= 0;
+			cnt <= 6'd1;
 		end
 		default: cnt <= 0;
 
@@ -652,7 +652,7 @@ always @(posedge clk) begin
 	// wchodzenie w stan distroy line będzie opierało się na liczniku zapełnionych klocków dla każdego rzędu
 	// - jeśli licznik i nowe pola które mielibyśmy teraz zapisywać sumują się do 10 -> przechodzimy tu
 	DISTROY_LINE: 
-		case(save2)
+		case(cnt)
 			4'd1: begin
 				if(filling[pos1[1]] == 4'd10) begin
 					for(j = 0; j<10; j= j+1) begin
@@ -662,11 +662,11 @@ always @(posedge clk) begin
 					distroy_nb <= 3'd1;
 					dl1 <= pos1[1];
 				end
-				save2 <= 4'd2;
+				cnt <= 4'd2;
 			end
 			4'd2: begin
 				ram_row <= pos2[1];
-				save2 <= 4'd3;
+				cnt <= 4'd3;
 			end
 			4'd3: begin
 				if(filling[pos2[1]] == 4'd10) begin
@@ -687,11 +687,11 @@ always @(posedge clk) begin
 					default: distroy_nb <= 3'd0;
 					endcase
 				end
-				save2 <= 4'd4;
+				cnt <= 4'd4;
 			end
 			4'd4: begin
 				ram_row <= pos3[1];
-				save2 <= 4'd5;
+				cnt <= 4'd5;
 			end
 			4'd5: begin
 				if(filling[pos3[1]] == 4'd10) begin
@@ -716,11 +716,11 @@ always @(posedge clk) begin
 					default: distroy_nb <= 3'd0;
 					endcase
 				end
-				save2 <= 4'd6;
+				cnt <= 4'd6;
 			end
 			4'd6: begin
 				ram_row <= pos4[1];
-				save2 <= 4'd7;
+				cnt <= 4'd7;
 			end
 			4'd7: begin
 				if(filling[pos1[1]] == 4'd10) begin
@@ -749,7 +749,7 @@ always @(posedge clk) begin
 					default: distroy_nb <= 3'd0;
 					endcase
 				end
-				save2 <= 4'd8;
+				cnt <= 4'd8;
 			end
 			4'd8: begin
 				q <= START_FALLING; 
@@ -757,11 +757,11 @@ always @(posedge clk) begin
 				block <= next_block;
 				gen_next_block <= 1;
 				wait_cnt <= 0;
-				save2 <= 4'd0;
+				cnt <= 4'd0;
 			end
 			default: begin
 				distroy_nb <= 0;
-				save2 <= 4'd1;
+				cnt <= 4'd1;
 			end		
 		endcase
 
