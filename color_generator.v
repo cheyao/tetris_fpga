@@ -40,7 +40,8 @@ module color_generator (
 
     localparam [2:0]	START_SCREEN = 3'b000, COUNTING = 3'b001, 
                         START_FALLING = 3'b010, FALLING = 3'b011, 
-                        DISTROY_LINE = 3'b101, FAIL = 3'b111;
+                        DISTROY_LINE = 3'b100, CLEAN = 3'b101, 
+                        LINES_DOWN = 3'b110, FAIL = 3'b111;
 
     wire [23:0] i_color, t_color, o_color, l_color, j_color, s_color, z_color;
     //reg [23:0] block_color;
@@ -121,6 +122,15 @@ module color_generator (
                         || column >= sq4_3 && column < sq4_2 && row >= sq4_1 [8:0] && row < sq4_0 [8:0])
                             rgb = block_color;
                         else if(|ram_color)
+                            rgb = ram_color;
+                        else if (column == 10'd240 || column == 10'd260 || column == 10'd280
+                                || column == 10'd300 || column == 10'd320 || column == 10'd340
+                                || column == 10'd360 || column == 10'd380 || column == 10'd400)
+                                rgb = LIGHT_ROSE2;
+                        else rgb = LIGHT_ROSE;
+
+                    LINES_DOWN:
+                        if(|ram_color)
                             rgb = ram_color;
                         else if (column == 10'd240 || column == 10'd260 || column == 10'd280
                                 || column == 10'd300 || column == 10'd320 || column == 10'd340

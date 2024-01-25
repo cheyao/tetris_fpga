@@ -8,7 +8,7 @@ reg [3:0]cnt;
 
 always @(posedge clk) begin
     if(gen) begin
-        cnt <= 3'd1;
+        cnt <= 4'd1;
         bcd <= 0;
     end
 

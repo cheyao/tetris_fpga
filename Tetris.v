@@ -101,6 +101,7 @@ seg7 h6 (bcd_lvl[7:4], HEX5);
 wire [23:0] ram_columns [9:0];
 reg [4:0] ram_row;
 wire [23:0] d [9:0];
+reg [23:0] d_reg [9:0];
 reg we [9:0]; 
 
 generate
@@ -110,7 +111,7 @@ generate
 	end
 
 	for(i = 0; i<10; i = i+1) begin : data
-		assign d[i] = q == CLEAN || q == DISTROY_LINE ? 0 : block_color;
+		assign d[i] = (q == CLEAN || q == DISTROY_LINE) ? 0 : (q == LINES_DOWN ? d_reg[i] : block_color);
 	end
 endgenerate
 
@@ -147,7 +148,8 @@ localparam [2:0] 	I = 3'b111, T = 3'b001, O = 3'b010, L = 3'b011,
 
 localparam [2:0]	START_SCREEN = 3'b000, COUNTING = 3'b001, 
 					START_FALLING = 3'b010, FALLING = 3'b011, 
-					DISTROY_LINE = 3'b100, CLEAN = 3'b101, FAIL = 3'b111;
+					DISTROY_LINE = 3'b100, CLEAN = 3'b101, 
+					LINES_DOWN = 3'b110, FAIL = 3'b111;
 
 reg [2:0] q;
 
@@ -245,7 +247,7 @@ always @(posedge clk) begin
 	case(q)
 
 	START_SCREEN: begin		
-		speed <= 6'd10; //zmiana przy symulacji 1/8
+		speed <= 6'd10; //zmiana przy symulacji 1/10
 		level <= 6'd0;
 		distroyed_lines <= 10'd0;
 		if(|click) begin
@@ -258,7 +260,7 @@ always @(posedge clk) begin
 
 	COUNTING: begin
 		if(frame_passed) begin 
-			if(wait_cnt < 6'd40) //zmiana przy symulacji 5/30
+			if(wait_cnt < 6'd40) //zmiana przy symulacji 5/40
 				wait_cnt <= wait_cnt + 1;
 			else begin
 				if(q_counting > 0) begin
@@ -384,7 +386,7 @@ always @(posedge clk) begin
 		6'd1:
 			begin
 				if(left && !right) begin
-					if(check_left < 4'd5) //przy symulacji 2/5
+					if(check_left < 4'd6) //przy symulacji 2/6
 						check_left <= check_left + 1;
 					else begin
 						if (pos1[0] > 5'd0 && pos2[0] > 5'd0 && pos3[0] > 5'd0 && pos4[0] > 5'd0) begin
@@ -408,7 +410,7 @@ always @(posedge clk) begin
 		6'd2:
 			begin
 				if(right && !left) begin
-					if(check_right < 4'd5) //przy symulacji 2/5
+					if(check_right < 4'd6) //przy symulacji 2/6
 						check_right <= check_right + 1;
 					else begin
 						if (pos1[0] < 5'd9 && pos2[0] < 5'd9 && pos3[0] < 5'd9 && pos4[0] < 5'd9)begin
@@ -668,7 +670,7 @@ always @(posedge clk) begin
 	
 	DISTROY_LINE: 
 		case(cnt)
-			4'd1: begin
+			6'd1: begin
 				if(filling[pos1[1]] == 4'd10) begin
 					for(j = 0; j<10; j= j+1) begin
 						we[j] <= 1;
@@ -678,13 +680,13 @@ always @(posedge clk) begin
 					distroy_nb <= 3'd1;
 					dl1 <= pos1[1];
 				end
-				cnt <= 4'd2;
+				cnt <= 6'd2;
 			end
-			4'd2: begin
+			6'd2: begin
 				ram_row <= pos2[1];
-				cnt <= 4'd3;
+				cnt <= 6'd3;
 			end
-			4'd3: begin
+			6'd3: begin
 				if(filling[pos2[1]] == 4'd10) begin
 					for(j = 0; j<10; j= j+1) begin
 						we[j] <= 1;
@@ -695,7 +697,7 @@ always @(posedge clk) begin
 					
 					3'd0: 	begin
 							distroy_nb <= 3'd1;
-							dl1 <= pos1[1];
+							dl1 <= pos2[1];
 							end
 					3'd1: 	begin
 							distroy_nb <= 3'd2;
@@ -704,13 +706,13 @@ always @(posedge clk) begin
 					default: distroy_nb <= 3'd0;
 					endcase
 				end
-				cnt <= 4'd4;
+				cnt <= 6'd4;
 			end
-			4'd4: begin
+			6'd4: begin
 				ram_row <= pos3[1];
-				cnt <= 4'd5;
+				cnt <= 6'd5;
 			end
-			4'd5: begin
+			6'd5: begin
 				if(filling[pos3[1]] == 4'd10) begin
 					for(j = 0; j<10; j= j+1) begin
 						we[j] <= 1;
@@ -721,11 +723,11 @@ always @(posedge clk) begin
 					
 					3'd0: 	begin
 							distroy_nb <= 3'd1;
-							dl1 <= pos1[1];
+							dl1 <= pos3[1];
 							end
 					3'd1: 	begin
 							distroy_nb <= 3'd2;
-							dl2 <= pos2[1];
+							dl2 <= pos3[1];
 							end
 					3'd2: 	begin
 							distroy_nb <= 3'd3;
@@ -734,13 +736,13 @@ always @(posedge clk) begin
 					default: distroy_nb <= 3'd0;
 					endcase
 				end
-				cnt <= 4'd6;
+				cnt <= 6'd6;
 			end
-			4'd6: begin
+			6'd6: begin
 				ram_row <= pos4[1];
-				cnt <= 4'd7;
+				cnt <= 6'd7;
 			end
-			4'd7: begin
+			6'd7: begin
 				if(filling[pos4[1]] == 4'd10) begin
 					for(j = 0; j<10; j= j+1) begin
 						we[j] <= 1;
@@ -751,15 +753,15 @@ always @(posedge clk) begin
 					
 					3'd0: 	begin
 							distroy_nb <= 3'd1;
-							dl1 <= pos1[1];
+							dl1 <= pos4[1];
 							end
 					3'd1: 	begin
 							distroy_nb <= 3'd2;
-							dl2 <= pos2[1];
+							dl2 <= pos4[1];
 							end
 					3'd2: 	begin
 							distroy_nb <= 3'd3;
-							dl3 <= pos3[1];
+							dl3 <= pos4[1];
 							end
 					3'd3: 	begin
 							distroy_nb <= 3'd4;
@@ -770,22 +772,174 @@ always @(posedge clk) begin
 					default: distroy_nb <= 3'd0;
 					endcase
 				end
-				cnt <= 4'd8;
+				cnt <= 6'd8;
 			end
-			4'd8: begin
+			6'd8: begin
+				if(|distroy_nb) begin
+					q <= LINES_DOWN; 
+					wait_cnt <= 0;
+					cnt <= 6'd0;
+					gen_add_line <= 1;
+				end
+				else begin
+					q <= START_FALLING; 
+					ram_row <= 5'd0;
+					block <= next_block;
+					gen_next_block <= 1;
+					wait_cnt <= 0;
+					cnt <= 6'd0;
+					gen_add_line <= 1;
+				end
+			end
+			default: begin
+				distroy_nb <= 0;
+				cnt <= 6'd1;
+			end		
+		endcase
+
+	LINES_DOWN: begin
+
+		casez (cnt)
+
+		6'b00????: begin
+			if(frame_passed) cnt <= cnt + 1;
+		end
+		6'd16: begin
+			if(|dl1) begin
+				ram_row <= dl1 - 1;
+				cnt <= cnt + 1;
+				filling[dl1] <= filling[dl1 - 1];
+			end
+			else if (distroy_nb > 3'd1) begin
+				cnt <= 6'd19;
+				filling[dl1] <= 0;
+			end
+			else begin
 				q <= START_FALLING; 
 				ram_row <= 5'd0;
 				block <= next_block;
 				gen_next_block <= 1;
 				wait_cnt <= 0;
-				cnt <= 4'd0;
-				gen_add_line <= 1;
+				cnt <= 6'd0;
+				filling[dl1] <= 0;
 			end
-			default: begin
-				distroy_nb <= 0;
-				cnt <= 4'd1;
-			end		
+		end
+		6'd17: begin
+			for(j = 0; j<10; j= j+1) begin
+				d_reg[j] <= ram_columns[j];
+			end
+			ram_row <= dl1;
+			dl1 <= dl1 - 1;
+			cnt <= cnt + 1;
+		end
+		6'd18: begin
+			for(j = 0; j<10; j= j+1) begin
+				we[j] <= 1;
+			end
+			cnt <= 6'd16;
+		end
+		6'd19: begin
+			if(|dl2) begin
+				ram_row <= dl2 - 1;
+				cnt <= cnt + 1;
+				filling[dl2] <= filling[dl2 - 1];
+			end
+			else if (distroy_nb > 3'd2) begin
+				cnt <= 6'd22;
+				filling[dl2] <= 0;
+			end
+			else begin
+				q <= START_FALLING; 
+				ram_row <= 5'd0;
+				block <= next_block;
+				gen_next_block <= 1;
+				wait_cnt <= 0;
+				cnt <= 6'd0;
+				filling[dl2] <= 0;
+			end
+		end
+		6'd20: begin
+			for(j = 0; j<10; j= j+1) begin
+				d_reg[j] <= ram_columns[j];
+			end
+			ram_row <= dl2;
+			dl2 <= dl2 - 1;
+			cnt <= cnt + 1;
+		end
+		6'd21: begin
+			for(j = 0; j<10; j= j+1) begin
+				we[j] <= 1;
+			end
+			cnt <= 6'd19;
+		end
+		6'd22: begin
+			if(|dl3) begin
+				ram_row <= dl3 - 1;
+				cnt <= cnt + 1;
+				filling[dl3] <= filling[dl3 - 1];
+			end
+			else if (distroy_nb > 3'd3) begin
+				cnt <= 6'd25;
+				filling[dl3] <= 0;
+			end
+			else begin
+				q <= START_FALLING; 
+				ram_row <= 5'd0;
+				block <= next_block;
+				gen_next_block <= 1;
+				wait_cnt <= 0;
+				cnt <= 6'd0;
+				filling[dl3] <= 0;
+			end
+		end
+		6'd23: begin
+			for(j = 0; j<10; j= j+1) begin
+				d_reg[j] <= ram_columns[j];
+			end
+			ram_row <= dl3;
+			dl3 <= dl3 - 1;
+			cnt <= cnt + 1;
+		end
+		6'd24: begin
+			for(j = 0; j<10; j= j+1) begin
+				we[j] <= 1;
+			end
+			cnt <= 6'd22;
+		end
+		6'd25: begin
+			if(|dl4) begin
+				ram_row <= dl4 - 1;
+				cnt <= cnt + 1;
+				filling[dl4] <= filling[dl4 - 1];
+			end
+			else begin
+				q <= START_FALLING; 
+				ram_row <= 5'd0;
+				block <= next_block;
+				gen_next_block <= 1;
+				wait_cnt <= 0;
+				cnt <= 6'd0;
+				filling[dl4] <= 0;
+			end
+		end
+		6'd26: begin
+			for(j = 0; j<10; j= j+1) begin
+				d_reg[j] <= ram_columns[j];
+			end
+			ram_row <= dl4;
+			dl4 <= dl4 - 1;
+			cnt <= cnt + 1;
+		end
+		6'd27: begin
+			for(j = 0; j<10; j= j+1) begin
+				we[j] <= 1;
+			end
+			cnt <= 6'd25;
+		end
+		default: cnt <= 0;
+
 		endcase
+	end
 
 	FAIL: begin
 		if(|click) begin
