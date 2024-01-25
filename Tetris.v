@@ -80,6 +80,21 @@ color_generator cg	(clk, 0, VGA_BLANK_N, r, c, block, next_block,
 VGA_sync vga(clk, 0, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
 
 //=======================================================
+//  HEX
+//=======================================================
+
+wire [15:0] bcd_dl;
+wire [7:0] bcd_lvl;
+bin_bcd_dl bbdl (clk, gen_add_line, distroyed_lines, bcd_dl);
+bin_bcd_lvl bblvl (clk, gen_add_line, level, bcd_lvl);
+seg7 h1 (bcd_dl[3:0], HEX0);
+seg7 h2 (bcd_dl[7:4], HEX1);
+seg7 h3 (bcd_dl[11:8], HEX2);
+seg7 h4 (bcd_dl[15:12], HEX3);
+seg7 h5 (bcd_lvl[3:0], HEX4);
+seg7 h6 (bcd_lvl[7:4], HEX5);
+
+//=======================================================
 //  Game memory
 //=======================================================
 
@@ -139,11 +154,12 @@ reg [2:0] q;
 reg [9:0] distroyed_lines; //rekord niejasny, koło 400
 reg [10:0] score; //jak liczyć to kiedyś potem, rekord - 1,62 miliona
 reg [5:0] level; //rekord 33
+reg gen_add_line;
 
 reg [5:0] wait_cnt; //licznik zatrzymania w jednym miejscu (w klatkach)
 reg [5:0] speed; //granica oczekiwania (w klatkach)
 
-reg [8:0] seed; //liczy czas od resetu/przegrania gry do startu i jest ziarnem dla generowania pseudolosowości
+reg [6:0] seed; //liczy czas od resetu/przegrania gry do startu i jest ziarnem dla generowania pseudolosowości
 wire [2:0] next_block;
 reg gen_next_block;
 reg [2:0] block;
@@ -151,7 +167,6 @@ reg rand_rst;
 
 reg [1:0] q_counting;
 reg [3:0] check_left, check_right;
-reg [3:0] save2;
 
 pseudo_random_number_generator ps_rand(gen_next_block, rand_rst, seed, next_block);
 
@@ -213,6 +228,7 @@ always @(posedge clk) begin
 	seed <= seed + 1;
 	rand_rst <= 0;
 	gen_next_block <= 0;
+	gen_add_line <= 0;
 	
 	for(j = 0; j<10; j= j+1) begin
 		we[j] <= 0;
@@ -230,6 +246,8 @@ always @(posedge clk) begin
 
 	START_SCREEN: begin		
 		speed <= 6'd10; //zmiana przy symulacji 1/8
+		level <= 6'd0;
+		distroyed_lines <= 10'd0;
 		if(|click) begin
 			q <= COUNTING;
 			rand_rst <= 1; 
@@ -438,7 +456,7 @@ always @(posedge clk) begin
 				end
 				cnt <= 6'd4;
 				ram_row <= pos1[1];
-			end //MUSZĄ SIĘ BUFOROWAĆ TEŻ X I Y
+			end
 		6'd4: 
 			if (|ram_columns[pos1[0][3:0]] || pos1[0] > 5'd9 || pos2[0] > 5'd9 ||
 				 pos3[0] > 5'd9 || pos4[0] > 5'd9) begin
@@ -629,7 +647,6 @@ always @(posedge clk) begin
 
 			q <= DISTROY_LINE;
 			ram_row <= pos1[1];
-			//save2 <= 4'd1;
 			distroy_nb <= 3'd0;
 			cnt <= 6'd1;
 		end
@@ -649,8 +666,6 @@ always @(posedge clk) begin
 		
 	end
 	
-	// wchodzenie w stan distroy line będzie opierało się na liczniku zapełnionych klocków dla każdego rzędu
-	// - jeśli licznik i nowe pola które mielibyśmy teraz zapisywać sumują się do 10 -> przechodzimy tu
 	DISTROY_LINE: 
 		case(cnt)
 			4'd1: begin
@@ -659,6 +674,7 @@ always @(posedge clk) begin
 						we[j] <= 1;
 					end
 					filling[pos1[1]] <= 4'd0;
+					distroyed_lines <= distroyed_lines + 1;
 					distroy_nb <= 3'd1;
 					dl1 <= pos1[1];
 				end
@@ -674,6 +690,7 @@ always @(posedge clk) begin
 						we[j] <= 1;
 					end
 					filling[pos2[1]] <= 4'd0;
+					distroyed_lines <= distroyed_lines + 1;
 					case (distroy_nb) 
 					
 					3'd0: 	begin
@@ -698,6 +715,7 @@ always @(posedge clk) begin
 					for(j = 0; j<10; j= j+1) begin
 						we[j] <= 1;
 					end
+					distroyed_lines <= distroyed_lines + 1;
 					filling[pos3[1]] <= 4'd0;
 					case (distroy_nb) 
 					
@@ -723,11 +741,12 @@ always @(posedge clk) begin
 				cnt <= 4'd7;
 			end
 			4'd7: begin
-				if(filling[pos1[1]] == 4'd10) begin
+				if(filling[pos4[1]] == 4'd10) begin
 					for(j = 0; j<10; j= j+1) begin
 						we[j] <= 1;
 					end
-					filling[pos1[1]] <= 4'd0;
+					distroyed_lines <= distroyed_lines + 1;
+					filling[pos4[1]] <= 4'd0;
 					case (distroy_nb) 
 					
 					3'd0: 	begin
@@ -744,6 +763,8 @@ always @(posedge clk) begin
 							end
 					3'd3: 	begin
 							distroy_nb <= 3'd4;
+							level <= level + 1;
+							speed <= speed > 0 ? speed - 1 : 0;
 							dl4 <= pos4[1];
 							end
 					default: distroy_nb <= 3'd0;
@@ -758,6 +779,7 @@ always @(posedge clk) begin
 				gen_next_block <= 1;
 				wait_cnt <= 0;
 				cnt <= 4'd0;
+				gen_add_line <= 1;
 			end
 			default: begin
 				distroy_nb <= 0;
