@@ -701,7 +701,12 @@ always @(posedge clk) begin
 							end
 					3'd1: 	begin
 							distroy_nb <= 3'd2;
-							dl2 <= pos2[1];
+							if(pos2[1] > dl1)
+								dl2 <= pos2[1];
+							else begin
+								dl1 <= pos2[1];
+								dl2 <= dl1;
+							end
 							end
 					default: distroy_nb <= 3'd0;
 					endcase
@@ -727,11 +732,26 @@ always @(posedge clk) begin
 							end
 					3'd1: 	begin
 							distroy_nb <= 3'd2;
-							dl2 <= pos3[1];
+							if(pos3[1] > dl1)
+								dl2 <= pos3[1];
+							else begin
+								dl1 <= pos3[1];
+								dl2 <= dl1;
+							end
 							end
 					3'd2: 	begin
 							distroy_nb <= 3'd3;
-							dl3 <= pos3[1];
+							if(pos3[1] > dl2)
+								dl3 <= pos3[1];
+							else if (pos3[1] > dl1) begin
+								dl2 <= pos3[1];
+								dl3 <= dl2;
+							end
+							else begin
+								dl1 <= pos3[1];
+								dl2 <= dl1;
+								dl3 <= dl2;
+							end
 							end
 					default: distroy_nb <= 3'd0;
 					endcase
@@ -757,17 +777,48 @@ always @(posedge clk) begin
 							end
 					3'd1: 	begin
 							distroy_nb <= 3'd2;
-							dl2 <= pos4[1];
+							if(pos4[1] > dl1)
+								dl2 <= pos4[1];
+							else begin
+								dl1 <= pos4[1];
+								dl2 <= dl1;
+							end
 							end
 					3'd2: 	begin
 							distroy_nb <= 3'd3;
-							dl3 <= pos4[1];
+							if(pos4[1] > dl2)
+								dl3 <= pos4[1];
+							else if (pos4[1] > dl1) begin
+								dl2 <= pos4[1];
+								dl3 <= dl2;
+							end
+							else begin
+								dl1 <= pos4[1];
+								dl2 <= dl1;
+								dl3 <= dl2;
+							end
 							end
 					3'd3: 	begin
 							distroy_nb <= 3'd4;
 							level <= level + 1;
 							speed <= speed > 0 ? speed - 1 : 0;
-							dl4 <= pos4[1];
+							if(pos4[1] > dl3)
+								dl4 <= pos4[1];
+							else if (pos4[1] > dl2) begin
+								dl3 <= pos4[1];
+								dl4 <= dl3;
+							end
+							else if (pos4[1] > dl1) begin
+								dl2 <= pos4[1];
+								dl3 <= dl2;
+								dl4 <= dl3;
+							end
+							else begin
+								dl1 <= pos4[1];
+								dl2 <= dl1;
+								dl3 <= dl2;
+								dl4 <= dl3;
+							end
 							end
 					default: distroy_nb <= 3'd0;
 					endcase

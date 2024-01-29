@@ -4,21 +4,27 @@ module bin_bcd_dl(
     output reg [15:0] bcd
 );
    
-reg [3:0]cnt;
+  reg [4:0]cnt;
 
 always @(posedge clk) begin
     if(gen) begin
-        cnt <= 4'd1;
+        cnt <= 5'd1;
         bcd <= 0;
     end
 
-    if(cnt > 4'd0 && cnt < 4'd11) begin
-        if (bcd[3:0] >= 4'd5) bcd[3:0] <= bcd[3:0] + 3;	
-        if (bcd[7:4] >= 4'd5) bcd[7:4] <= bcd[7:4] + 3;
-        if (bcd[11:8] >= 4'd5) bcd[11:8] <= bcd[11:8] + 3;
-        if (bcd[15:12] >= 4'd5) bcd[15:12] <= bcd[15:12] + 3;
-        bcd <= {bcd[14:0],bin[10-cnt]};
-        cnt <= cnt + 1;
+  if(cnt > 5'd0 && cnt < 5'd21) begin
+        if(cnt[0]) begin
+          if (bcd[3:0] >= 4'd5) bcd[3:0] <= bcd[3:0] + 4'd3;	
+          if (bcd[7:4] >= 4'd5) bcd[7:4] <= bcd[7:4] + 4'd3;
+          if (bcd[11:8] >= 4'd5) bcd[11:8] <= bcd[11:8] + 4'd3;
+          if (bcd[15:12] >= 4'd5) bcd[15:12] <= bcd[15:12] + 4'd3;
+            cnt <= cnt + 1;
+        end
+        else begin
+          bcd <= {bcd[14:0],bin[10-(cnt >> 1)]};
+            cnt <= cnt + 1;
+        end
+        
     end
 end
 
