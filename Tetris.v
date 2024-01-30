@@ -40,12 +40,22 @@ module Tetris(
 	output		          		VGA_VS //
 );
 
-wire clk;
-//assign clk = CLOCK_50;
-//WYRZUCONE DO SYMULACJI, MUSI WRÓCIĆ DO ODPALENIA SPRZĘTOWEGO
-clock_divider pll(clk, CLOCK_50, 0);
+//=======================================================
+//  CLOCK
+//=======================================================
 
-// delayed keys signals
+wire clk;
+
+/* SIMULATION */
+//assign clk = CLOCK_50; 
+
+/* SYNTHESIS */
+clock_divider pll(clk, CLOCK_50, 0); 
+
+//=======================================================
+//  KEYS
+//=======================================================
+
 wire down; 
 wire rotation;
 wire left;
@@ -67,16 +77,14 @@ detect click_det3(clk, down, click[3]);
 
 wire [8:0] r; //row
 wire [9:0] c; //column
-wire board; //am i painting the board or not
 
 assign VGA_CLK = clk;
 
-//sprawdzić czy 0 czy 1 zadziała jako reset
 color_generator cg	(clk, 0, VGA_BLANK_N, r, c, block, next_block, 
 					q, q_counting, ram_columns[board_column],
 					sq1[3], sq1[2], sq1[1], sq1[0], sq2[3], sq2[2], sq2[1], sq2[0], 
 					sq3[3], sq3[2], sq3[1], sq3[0], sq4[3], sq4[2], sq4[1], sq4[0],
-					board, block_color, VGA_R, VGA_G, VGA_B);
+					block_color, VGA_R, VGA_G, VGA_B);
 VGA_sync vga(clk, 0, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
 
 //=======================================================
@@ -85,6 +93,8 @@ VGA_sync vga(clk, 0, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
 
 wire [15:0] bcd_dl;
 wire [7:0] bcd_lvl;
+reg gen_add_line;
+
 bin_bcd_dl bbdl (clk, gen_add_line, distroyed_lines, bcd_dl);
 bin_bcd_lvl bblvl (clk, gen_add_line, level, bcd_lvl);
 seg7 h1 (bcd_dl[3:0], HEX0);
@@ -95,7 +105,7 @@ seg7 h5 (bcd_lvl[3:0], HEX4);
 seg7 h6 (bcd_lvl[7:4], HEX5);
 
 //=======================================================
-//  Game memory
+//  Memory
 //=======================================================
 
 wire [23:0] ram_columns [9:0];
@@ -103,6 +113,7 @@ reg [4:0] ram_row;
 wire [23:0] d [9:0];
 reg [23:0] d_reg [9:0];
 reg we [9:0]; 
+wire [23:0] block_color;
 
 generate
 	genvar i;
@@ -116,31 +127,12 @@ generate
 endgenerate
 
 
-//colors
-localparam [23:0]   LIGHT_ROSE = {8'd255, 8'd204, 8'd229}, 
-					PURPLE = {8'd255, 8'd153, 8'd255},
-					LIGHT_GREY = {8'd160, 8'd160, 8'd160},
-					DARK_GREY = {8'd96, 8'd96, 8'd96},
-					MINTY = {8'd153, 8'd255, 8'd204},
-					BLUE = {8'd102, 8'd178, 8'd255},
-					PINK = {8'd255, 8'd51, 8'd153},
-					DARK_PURPLE = {8'd127, 8'd0, 8'd255},
-					YELLOW = {8'd255, 8'd255, 8'd102},
-					GREEN = {8'd102, 8'd255, 8'd102},
-					PLUM = {8'd153, 8'd0, 8'd153};
-
-wire [23:0] i_color, t_color, o_color, l_color, j_color, s_color, z_color;
-wire [23:0] block_color;
-assign i_color = MINTY;
-assign t_color = BLUE;
-assign o_color = PINK;
-assign l_color = DARK_PURPLE;
-assign j_color = YELLOW;
-assign s_color = GREEN;
-assign z_color = PLUM;
+/********************************************************
+					   GAME LOGIC
+********************************************************/
 
 //=======================================================
-//  Game logic
+//  REG/WIRE/PARAM declarations
 //=======================================================
 
 localparam [2:0] 	I = 3'b111, T = 3'b001, O = 3'b010, L = 3'b011, 
@@ -151,51 +143,51 @@ localparam [2:0]	START_SCREEN = 3'b000, COUNTING = 3'b001,
 					DISTROY_LINE = 3'b100, CLEAN = 3'b101, 
 					LINES_DOWN = 3'b110, FAIL = 3'b111;
 
-reg [2:0] q;
+reg [2:0] q; 						// state of game
+reg [5:0] cnt; 						// controls the order of actions
 
-reg [9:0] distroyed_lines; //rekord niejasny, koło 400
-reg [10:0] score; //jak liczyć to kiedyś potem, rekord - 1,62 miliona
-reg [5:0] level; //rekord 33
-reg gen_add_line;
+reg [9:0] distroyed_lines;
+reg [5:0] level;
 
-reg [5:0] wait_cnt; //licznik zatrzymania w jednym miejscu (w klatkach)
-reg [5:0] speed; //granica oczekiwania (w klatkach)
+reg [5:0] wait_cnt; 				// time (in frames) to stay in the same position
+reg [5:0] speed; 					// the limit of wait_cnt
 
-reg [6:0] seed; //liczy czas od resetu/przegrania gry do startu i jest ziarnem dla generowania pseudolosowości
-wire [2:0] next_block;
-reg gen_next_block;
-reg [2:0] block;
 reg rand_rst;
+reg [6:0] seed; 					// the seed to generate pseudorandom numbers
 
-reg [1:0] q_counting;
-reg [3:0] check_left, check_right;
+reg [2:0] block; 					// type of active block
+wire [2:0] next_block; 				// type of the next block
+reg gen_next_block;
+
+reg [1:0] q_counting; 				// 3, 2, 1, 0 - time to start the game
+reg [3:0] left_delay, right_delay; 	// delay (in frames) of sliding left/right
+
+wire frame_passed; 					// goes high on the VGA_VS posedge
+
+reg rotate; 						// associated with click[2]
+
+reg [3:0] filling [19:0];			// how many fields of a row are taken
+reg [2:0] distroy_nb;				// how many lines to distroy
+reg [4:0] dl1, dl2, dl3, dl4;		// numbers of rows of lines to distroy
+
+reg [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0];		// localization points - borders: left, right up, down [3:0]
+reg [9:0] sq1_buf [3:0], sq2_buf [3:0], sq3_buf [3:0], sq4_buf [3:0];
+reg [8:0] x_centr, y_centr;			// rotation point
+reg [8:0] x_centr_buf, y_centr_buf;
+wire [4:0] pos1 [1:0], pos2 [1:0], pos3 [1:0], pos4[1:0];	// avtive block squares position: row, column
+
+wire [9:0] b_col;
+reg [3:0] board_column; 			// used in color generator to get to the memory
+
+integer j;
+
+//=======================================================
+//  Modules' instances & combinational logic
+//=======================================================
 
 pseudo_random_number_generator ps_rand(gen_next_block, rand_rst, seed, next_block);
 
-wire frame_passed;
-
-reg rotate;
-
 detect frame_det(clk, VGA_VS, frame_passed);
-
-reg [3:0] filling [19:0];
-reg [2:0] distroy_nb;
-reg [4:0] dl1, dl2, dl3, dl4;
-
-//localization points
-//borders: left, right up, down [3:0]
-reg [9:0] sq1 [3:0], sq2 [3:0], sq3 [3:0], sq4 [3:0];
-reg [9:0] sq1_buf [3:0], sq2_buf [3:0], sq3_buf [3:0], sq4_buf [3:0];
-//rotation point
-reg [8:0] x_centr, y_centr;
-reg [8:0] x_centr_buf, y_centr_buf;
-//row, column
-wire [4:0] pos1 [1:0], pos2 [1:0], pos3 [1:0], pos4[1:0];
-
-wire [9:0] b_col;
-reg [3:0] board_column;
-
-reg [5:0] cnt;
 
 generate
 	for(i = 0; i<10; i = i+1) begin : bc
@@ -224,7 +216,10 @@ always @* 	casez(b_col)
 
 			endcase
 
-integer j;
+//=======================================================
+//  State machine & sequential logic
+//=======================================================
+
 always @(posedge clk) begin
 
 	seed <= seed + 1;
@@ -246,8 +241,14 @@ always @(posedge clk) begin
 
 	case(q)
 
-	START_SCREEN: begin		
-		speed <= 6'd10; //zmiana przy symulacji 1/10
+	START_SCREEN: begin	
+
+		/* SIMULATION */
+		//speed <= 6'd1;
+
+		/* SYNTHESIS */
+		speed <= 6'd10;
+
 		level <= 6'd0;
 		distroyed_lines <= 10'd0;
 		if(|click) begin
@@ -260,7 +261,13 @@ always @(posedge clk) begin
 
 	COUNTING: begin
 		if(frame_passed) begin 
-			if(wait_cnt < 6'd40) //zmiana przy symulacji 5/40
+
+			/* SIMULATION */
+			//if(wait_cnt < 6'd5)
+
+			/* SYNTHESIS */
+			if(wait_cnt < 6'd40)
+
 				wait_cnt <= wait_cnt + 1;
 			else begin
 				if(q_counting > 0) begin
@@ -376,7 +383,7 @@ always @(posedge clk) begin
 		
 	end
 
-	FALLING: begin //wszystie operacje na ramie wydarzają się po VS czyli na blank czasie
+	FALLING: begin 		// all actions during the blank period
 		
 		if(click[2])
 			rotate <= 1;
@@ -386,8 +393,14 @@ always @(posedge clk) begin
 		6'd1:
 			begin
 				if(left && !right) begin
-					if(check_left < 4'd6) //przy symulacji 2/6
-						check_left <= check_left + 1;
+
+					/* SIMULATION */
+					//if(left_delay < 4'd2)
+
+					/* SYNTHESIS */
+					if(left_delay < 4'd6)
+
+						left_delay <= left_delay + 1;
 					else begin
 						if (pos1[0] > 5'd0 && pos2[0] > 5'd0 && pos3[0] > 5'd0 && pos4[0] > 5'd0) begin
 							sq1[2] <= sq1[2] - 20;
@@ -400,18 +413,24 @@ always @(posedge clk) begin
 							sq4[3] <= sq4[3] - 20;
 							x_centr <= x_centr - 20;
 						end
-						check_left <= 0;
+						left_delay <= 0;
 					end
 				end
-				else check_left <= 4'd0;
+				else left_delay <= 4'd0;
 				cnt <= 6'd2;
 			end
 
 		6'd2:
 			begin
 				if(right && !left) begin
-					if(check_right < 4'd6) //przy symulacji 2/6
-						check_right <= check_right + 1;
+
+					/* SIMULATION */
+					//if(right_delay < 4'd2)
+
+					/* SYNTHESIS */
+					if(right_delay < 4'd6)
+
+						right_delay <= right_delay + 1;
 					else begin
 						if (pos1[0] < 5'd9 && pos2[0] < 5'd9 && pos3[0] < 5'd9 && pos4[0] < 5'd9)begin
 							sq1[2] <= sq1[2] + 20;
@@ -424,10 +443,10 @@ always @(posedge clk) begin
 							sq4[3] <= sq4[3] + 20;
 							x_centr <= x_centr + 20;
 						end
-						check_right <= 0;
+						right_delay <= 0;
 					end
 				end
-				else check_right <= 4'd0;
+				else right_delay <= 4'd0;
 				cnt <= 6'd3;
 			end
 
@@ -801,7 +820,7 @@ always @(posedge clk) begin
 					3'd3: 	begin
 							distroy_nb <= 3'd4;
 							level <= level + 1;
-							speed <= speed > 0 ? speed - 1 : 0;
+							speed <= |speed ? speed - 1 : 0;
 							if(pos4[1] > dl3)
 								dl4 <= pos4[1];
 							else if (pos4[1] > dl2) begin

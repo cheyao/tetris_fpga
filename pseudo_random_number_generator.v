@@ -1,5 +1,4 @@
 module pseudo_random_number_generator#(parameter W = 2) (
-    //input [W:0] maxvalue,
     input next, rst,
     input [6:0] d,
     output [W:0] o

@@ -4,7 +4,7 @@ module bin_bcd_dl(
     output reg [15:0] bcd
 );
    
-  reg [4:0]cnt;
+reg [4:0]cnt;
 
 always @(posedge clk) begin
     if(gen) begin
