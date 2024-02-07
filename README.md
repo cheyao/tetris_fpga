@@ -1,25 +1,33 @@
-Implementation in Verilog of the well-known game Tetris. The program is
-intended for synthesis on an FPGA and supports the VGA standard. The
-repository also contains a simulation allowing the game to be run in a
-local environment.
+# FPGA TETRIS
 
-Main components:
+Verilog implementation of the well-known Tetris game. The project is designed to be synthesized on FPGA and supports the VGA standard. The repository also includes simulation files, allows you to run the game in your local environment.
 
-🔸 Tetris: Top-level module containing the game logic and instantiating
-the remaining modules. 🔸 VGA_sync: Circuit controlling the control
-signals for the VGA output. 🔸 color_generator: Determines the displayed
-color in a combinational manner. 🔸 pseudo_random_number_generator:
-Relies on a 9-bit shift register with linear feedback (feedback
-polynomial: x\^9 + x\^4 + 1).
+## Main components:
 
-Prerequisites for running the simulation:
+- **Tetris**: top-level module containing the game logic and instantiating the remaining modules. 
+- **VGA_sync**: controls the VGA  signals. 
+- **color_generator**: determines the displayed color in a combinational manner. 
+- **pseudo_random_number_generator**: based on a 7-bit shift register with linear feedback (feedback polynomial: $x^7 + x^3 + 1$).
+- **ram_single**: single port memory with synchronous write and asynchronous read (should be synthesized as an MLAB block)
 
-🔸 Verilator 🔸 g++ 🔸 CImg
+## Synthesis
+To synthesize the design on an FPGA, special software is needed to arrange the circuit components on the board. I used Intel Quartus Prime for this purpose, and tested the design on a DE1SoC Board.
 
-To run the simulation:
+## Prerequisites for running the simulation:
 
-verilator -cc \--trace Tetris.v \--exe tb_tetris.cpp
+- Verilator 
+- g++ 
+- CImg
+
+**Synthesis steps:**
+
+`verilator -cc --trace Tetris.v --exe tb_tetris.cpp`
 
 Replace the generated VTetris.mk file with the one from the repository.
 
-make -C obj_dir -f VTetris.mk VTetris
+`make -C obj_dir -f VTetris.mk VTetris`
+
+To run the simulation:
+
+`cd obj_dir`
+`./VTetris`
