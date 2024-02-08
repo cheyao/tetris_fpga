@@ -11,7 +11,7 @@ Verilog implementation of the well-known Tetris game. The project is designed to
 - **ram_single**: single port memory with synchronous write and asynchronous read (should be synthesized as an MLAB block)
 
 ## Synthesis
-To synthesize the design on an FPGA, special software is needed to arrange the circuit components on the board. I used Intel Quartus Prime for this purpose, and tested the design on a DE1SoC Board.
+To synthesize the design on an FPGA, special software is needed to arrange the circuit components on the board. I used Intel Quartus Prime for this purpose and tested the design on a DE1SoC Board.
 
 ## Prerequisites for running the simulation:
 
@@ -19,7 +19,9 @@ To synthesize the design on an FPGA, special software is needed to arrange the c
 - g++ 
 - CImg
 
-**Synthesis steps:**
+**Simulation steps:**
+
+Replace in Tetris.v lines tagged as `/* SYNTHESIS */` by lines tagged as `/* SIMULATION */`
 
 `verilator -cc --trace Tetris.v --exe tb_tetris.cpp`
 
