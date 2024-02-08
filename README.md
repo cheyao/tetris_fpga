@@ -13,7 +13,7 @@ Verilog implementation of the well-known Tetris game. The project is designed to
 ## Synthesis
 To synthesize the design on an FPGA, special software is needed to arrange the circuit components on the board. I used Intel Quartus Prime for this purpose and tested the design on a DE1SoC Board.
 
-## Simulation:
+## Simulation
 
 **Prerequisites:**
 
