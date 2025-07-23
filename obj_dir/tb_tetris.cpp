@@ -12,11 +12,12 @@ using namespace cimg_library;
 
 void tick(VTetris *dut, VerilatedVcdC* vcd) {
     do {
-        dut->CLOCK_50 ^= 1;
+        dut->clk ^= 1;
+        dut->VGA_CLK ^= 1;
         dut->eval();
         //uncomment the line below to create a waveform
-        //vcd->dump(sim_time++);
-    } while(dut->CLOCK_50);
+        vcd->dump(sim_time++);
+    } while(dut->clk);
 }
 
 void update_keys(VTetris *dut, CImgDisplay *dsp){
@@ -25,7 +26,6 @@ void update_keys(VTetris *dut, CImgDisplay *dsp){
 }
 
 int main(){
-
     VTetris *dut = new VTetris;
 
     Verilated::traceEverOn(true);
@@ -40,14 +40,12 @@ int main(){
 
     const unsigned char blue[] = {0, 130, 255};
     const unsigned char orange[] = {255, 100, 50};
-    bool durna_zmienna;
-
-    while(!dsp.is_closed() && !dsp.is_keyESC()){
-
+    while(!dsp.is_closed() && !dsp.is_keyESC()) {
         while(dut->VGA_VS || !dut->VGA_BLANK_N){
             update_keys(dut, &dsp);
             tick(dut, v_vcd);
         }
+
         for(int i = 0; i< h; i++){
             for(int j = 0; j<w; j++){
                 screen(j, i, 0, 0) = dut->VGA_R;
@@ -64,14 +62,13 @@ int main(){
             }
         }
         
-        if(dsp.is_keyA()) durna_zmienna = 1;
-
         dsp.display(screen);
-        dsp.wait();
+        //dsp.wait();
     }
 
     dut->final();
     v_vcd->close();
     delete dut;
+
     return 0;
 }

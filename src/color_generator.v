@@ -1,5 +1,5 @@
 module color_generator (
-    input clk, rst, blank_n,
+    input blank_n,
     input [8:0] row,
     input [9:0] column,
     input [2:0] block,

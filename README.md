@@ -7,7 +7,6 @@ Verilog implementation of the well-known Tetris game. The project is designed to
 - **Tetris**: top-level module containing the game logic and instantiating the remaining modules. 
 - **VGA_sync**: controls the VGA  signals. 
 - **color_generator**: determines the displayed color in a combinational manner. 
-- **pseudo_random_number_generator**: based on a 7-bit shift register with linear feedback (feedback polynomial: $x^7 + x^3 + 1$).
 - **ram_single**: single port memory with synchronous write and asynchronous read (should be synthesized as an MLAB block)
 
 ## Synthesis

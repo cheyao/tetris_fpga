@@ -1,30 +1,9 @@
+// `define DEBUG
+`define SYNTH
+
 module Tetris(
-
-	//////////// Audio //////////
-	input 		          		AUD_ADCDAT,
-	inout 		          		AUD_ADCLRCK,
-	inout 		          		AUD_BCLK,
-	output		          		AUD_DACDAT,
-	inout 		          		AUD_DACLRCK,
-	output		          		AUD_XCK,
-
 	//////////// CLOCK //////////
-	input 		          		CLOCK2_50,
-	input 		          		CLOCK3_50,
-	input 		          		CLOCK4_50,
-	input 		          		CLOCK_50,
-
-	//////////// I2C for Audio and Video-In //////////
-	output		          		FPGA_I2C_SCLK,
-	inout 		          		FPGA_I2C_SDAT,
-
-	//////////// SEG7 //////////
-	output		     [6:0]		HEX0,
-	output		     [6:0]		HEX1,
-	output		     [6:0]		HEX2,
-	output		     [6:0]		HEX3,
-	output		     [6:0]		HEX4,
-	output		     [6:0]		HEX5,
+	input 		          		clk,
 
 	//////////// KEY //////////
 	input 		     [3:0]		KEY,
@@ -32,25 +11,15 @@ module Tetris(
 	//////////// VGA //////////
 	output		          		VGA_BLANK_N,
 	output		     [7:0]		VGA_B, 
-	output		          		VGA_CLK,
+	input		          		VGA_CLK,
 	output		     [7:0]		VGA_G,
 	output		          		VGA_HS,
 	output		     [7:0]		VGA_R, 
 	output		          		VGA_SYNC_N,
-	output		          		VGA_VS //
+	output		          		VGA_VS,
+
+    output           [4:0]      led
 );
-
-//=======================================================
-//  CLOCK
-//=======================================================
-
-wire clk;
-
-/* SIMULATION */
-//assign clk = CLOCK_50; 
-
-/* SYNTHESIS */
-clock_divider pll(clk, CLOCK_50, 0); 
 
 //=======================================================
 //  KEYS
@@ -62,8 +31,8 @@ wire left;
 wire right;
 wire [3:0] click; // clicking detectors
 
-synchronizer syn_key1(clk, ~KEY[0], right);
-synchronizer syn_key2(clk, ~KEY[1], left);
+//synchronizer syn_key1(clk, ~KEY[0], right);
+//synchronizer syn_key2(clk, ~KEY[1], left);
 synchronizer syn_key3(clk, ~KEY[2], rotation);
 synchronizer syn_key4(clk, ~KEY[3], down);
 detect click_det0(clk, right, click[0]);
@@ -78,14 +47,12 @@ detect click_det3(clk, down, click[3]);
 wire [8:0] r; //row
 wire [9:0] c; //column
 
-assign VGA_CLK = clk;
-
-color_generator cg	(clk, 0, VGA_BLANK_N, r, c, block, next_block, 
+color_generator cg	(VGA_BLANK_N, r, c, block, next_block, 
 					q, q_counting, ram_columns[board_column],
 					sq1[3], sq1[2], sq1[1], sq1[0], sq2[3], sq2[2], sq2[1], sq2[0], 
 					sq3[3], sq3[2], sq3[1], sq3[0], sq4[3], sq4[2], sq4[1], sq4[0],
 					block_color, VGA_R, VGA_G, VGA_B);
-VGA_sync vga(clk, 0, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
+VGA_sync vga(VGA_CLK, 0, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, r, c);
 
 //=======================================================
 //  HEX
@@ -97,12 +64,6 @@ reg gen_add_line;
 
 bin_bcd_dl bbdl (clk, gen_add_line, distroyed_lines, bcd_dl);
 bin_bcd_lvl bblvl (clk, gen_add_line, level, bcd_lvl);
-seg7 h1 (bcd_dl[3:0], HEX0);
-seg7 h2 (bcd_dl[7:4], HEX1);
-seg7 h3 (bcd_dl[11:8], HEX2);
-seg7 h4 (bcd_dl[15:12], HEX3);
-seg7 h5 (bcd_lvl[3:0], HEX4);
-seg7 h6 (bcd_lvl[7:4], HEX5);
 
 //=======================================================
 //  Memory
@@ -244,10 +205,11 @@ always @(posedge clk) begin
 	START_SCREEN: begin	
 
 		/* SIMULATION */
-		//speed <= 6'd1;
-
-		/* SYNTHESIS */
-		speed <= 6'd10;
+`ifndef SYNTH
+		    speed <= 6'd1;
+`else
+            speed <= 6'd10;
+`endif
 
 		level <= 6'd0;
 		distroyed_lines <= 10'd0;
@@ -262,26 +224,25 @@ always @(posedge clk) begin
 	COUNTING: begin
 		if(frame_passed) begin 
 
-			/* SIMULATION */
-			//if(wait_cnt < 6'd5)
-
-			/* SYNTHESIS */
-			if(wait_cnt < 6'd40)
-
-				wait_cnt <= wait_cnt + 1;
-			else begin
-				if(q_counting > 0) begin
-					q_counting <= q_counting - 1;
-					wait_cnt <= 0;
-				end
-				else begin
-					q <= START_FALLING;
-					ram_row <= 5'd0;
-					block <= next_block;
-					gen_next_block <= 1; 
-					wait_cnt <= 0;
-				end
-			end
+`ifndef SYNTH
+            if(wait_cnt < 6'd5)
+`else
+            if(wait_cnt < 6'd40)
+`endif
+                wait_cnt <= wait_cnt + 1;
+            else begin
+                if(q_counting > 0) begin
+                    q_counting <= q_counting - 1;
+                    wait_cnt <= 0;
+                end
+                else begin
+                    q <= START_FALLING;
+                    ram_row <= 5'd0;
+                    block <= next_block;
+                    gen_next_block <= 1; 
+                    wait_cnt <= 0;
+                end
+            end
 		end			
 	end
 
@@ -394,14 +355,15 @@ always @(posedge clk) begin
 			begin
 				if(left && !right) begin
 
+`ifndef SYNTH
 					/* SIMULATION */
-					//if(left_delay < 4'd2)
-
+                    if(left_delay < 4'd2) begin
+`else
 					/* SYNTHESIS */
-					if(left_delay < 4'd6)
-
+                    if(left_delay < 4'd6) begin
+`endif
 						left_delay <= left_delay + 1;
-					else begin
+                    end else begin
 						if (pos1[0] > 5'd0 && pos2[0] > 5'd0 && pos3[0] > 5'd0 && pos4[0] > 5'd0) begin
 							sq1[2] <= sq1[2] - 20;
 							sq1[3] <= sq1[3] - 20;
@@ -424,14 +386,15 @@ always @(posedge clk) begin
 			begin
 				if(right && !left) begin
 
+`ifndef SYNTH
 					/* SIMULATION */
-					//if(right_delay < 4'd2)
-
+                    if(right_delay < 4'd2) begin
+`else
 					/* SYNTHESIS */
-					if(right_delay < 4'd6)
-
+                    if(right_delay < 4'd6) begin
+`endif
 						right_delay <= right_delay + 1;
-					else begin
+                    end else begin
 						if (pos1[0] < 5'd9 && pos2[0] < 5'd9 && pos3[0] < 5'd9 && pos4[0] < 5'd9)begin
 							sq1[2] <= sq1[2] + 20;
 							sq1[3] <= sq1[3] + 20;
@@ -544,9 +507,11 @@ always @(posedge clk) begin
 		6'd8:
 			begin	
 				if(!down && wait_cnt < speed)
+`ifdef SYNTH
 					begin
 						wait_cnt <= wait_cnt + 1;
 					end
+`endif
 				else 
 				begin
 					sq1[0] <= sq1[0] + 1;
